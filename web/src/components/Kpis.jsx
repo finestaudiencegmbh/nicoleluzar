@@ -62,10 +62,10 @@ export default function Kpis({ kpis, dist, tiers, features = {}, accent = '#d0bb
           <div className="kpi-section-head"><span className="kpi-dot" style={{ background: GREEN }} />Closings</div>
           <div className="kpi-grid">
             <Card label="Closings gesamt" value={fmtInt(closings.total)} sub={`${fmtInt(closings.paid)} über Ads · ${fmtInt(closings.organic)} organisch`} accent={GREEN} />
-            <Card label="Umsatz netto" value={fmtEur(closings.netto)} sub={`${fmtEur(closings.nettoPaid)} über Ads · ${fmtEur(closings.nettoOrganic)} organisch`} accent={GREEN} />
-            <Card label="Umsatz brutto" value={fmtEur(closings.brutto)} sub={`${fmtEur(closings.bruttoPaid)} über Ads · ${fmtEur(closings.bruttoOrganic)} organisch`} accent={GREEN} />
             <Card label="Cash Collect netto" value={fmtEur(closings.ccNetto)} sub={`${fmtEur(closings.ccNettoPaid)} über Ads · ${fmtEur(closings.ccNettoOrganic)} organisch`} accent={GREEN} />
             <Card label="Cash Collect brutto" value={fmtEur(closings.ccBrutto)} sub={`${fmtEur(closings.ccBruttoPaid)} über Ads · ${fmtEur(closings.ccBruttoOrganic)} organisch`} accent={GREEN} />
+            <Card label="Umsatz netto" value={fmtEur(closings.netto)} sub={`${fmtEur(closings.nettoPaid)} über Ads · ${fmtEur(closings.nettoOrganic)} organisch`} accent={GREEN} />
+            <Card label="Umsatz brutto" value={fmtEur(closings.brutto)} sub={`${fmtEur(closings.bruttoPaid)} über Ads · ${fmtEur(closings.bruttoOrganic)} organisch`} accent={GREEN} />
           </div>
         </section>
       )}
