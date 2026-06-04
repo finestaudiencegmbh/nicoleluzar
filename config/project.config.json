@@ -1,17 +1,17 @@
 {
   "_comment": "Zentrale Projekt-Konfiguration. HIER wird ein neues Dashboard eingerichtet – nicht im Code. Siehe TEMPLATE.md. Nach Änderungen den Server neu starten (die Datei wird beim Start gelesen).",
 
-  "name": "Edith Pauls Gefühlsklar Workshop",
-  "shortName": "Gefühlsklar",
-  "subtitle": "Edith Pauls · Workshop",
+  "name": "Nicole Luzar",
+  "shortName": "Nicole Luzar",
+  "subtitle": "Live-Webinar",
 
   "_comment_branding": "accent = Akzentfarbe (Hex) für KPIs, Buttons, Graphen. logo = Pfad zum Logo in web/public (wird als /<datei> ausgeliefert).",
   "branding": {
-    "accent": "#cb997e",
+    "accent": "#ec761e",
     "logo": "/logo.svg"
   },
 
-  "_comment_features": "Feature-Flags. hasTickets=false blendet ALLE ticketbezogenen KPIs/Spalten aus (€/Ticket, CVR Ticket, Kosten/Ticket, VIP). hasQuality=false blendet das komplette Fragebogen-/Scoring-System aus (Quali-Rate, Ø Quali, Tier-Verteilung, Fragebogen-Filter).",
+  "_comment_features": "Feature-Flags. hasTickets=false blendet ALLE ticketbezogenen KPIs/Spalten aus (€/Ticket, CVR Ticket, Kosten/Ticket, VIP). hasQuality=false blendet das komplette Fragebogen-/Scoring-System aus (Quali-Rate, Ø Quali, Tier-Verteilung, Fragebogen-Filter). Dieses Projekt: weder Tickets noch Fragebogen.",
   "features": {
     "hasTickets": false,
     "hasQuality": false
@@ -19,11 +19,11 @@
 
   "_comment_ticketLabel": "Beschriftung der Ticket-Entität (nur relevant wenn hasTickets=true).",
   "ticketLabel": {
-    "singular": "VIP-Ticket",
-    "plural": "VIP-Tickets"
+    "singular": "Ticket",
+    "plural": "Tickets"
   },
 
-  "_comment_sheet": "Tabellen-Erkennung + Spalten-Mapping dieses Sheets ('KPIs Webinar B2C_Edith Pauls'). Schlüssel normalisiert: kleingeschrieben, ohne ? : ., Mehrfach-Leerzeichen kollabiert. overview = Creative-Übersicht (Adspend je Creative), leads = Leads-Tab. detect.all müssen alle vorhanden sein, detect.any mindestens eines (grenzt Leads sauber gegen Termine/Closings/Teilnehmer/Watchtime ab).",
+  "_comment_sheet": "Tabellen-Erkennung + Spalten-Mapping dieses Sheets (Nicole Luzar). Schlüssel normalisiert: kleingeschrieben, ohne ? : ., Mehrfach-Leerzeichen kollabiert. overview = Creative-Übersicht (Adspend je Creative), leads = Leads-Tab (Live-Webinar). detect.all müssen alle vorhanden sein, detect.any mindestens eines (grenzt die Tabs sauber gegeneinander ab – v. a. Leads gegen Teilnehmer/Watchtime/Termine/Closings).",
   "sheet": {
     "overview": {
       "detect": { "all": ["adspend"], "any": ["creative", "anzeigengruppe"] },
@@ -33,7 +33,7 @@
         "adspend": ["adspend"],
         "clicks": ["ausg klicks"],
         "cpc": ["cpc"],
-        "cvrStart": ["cvr start"],
+        "cvrStart": ["cvr webinar", "cvr start"],
         "leads": ["leads"]
       }
     },
@@ -44,9 +44,9 @@
         "firstName": ["name"],
         "lastName": [],
         "email": ["e-mail"],
-        "utmSource": ["utm source"],
-        "utmMedium": ["utm medium"],
-        "utmCampaign": ["utm campaign"],
+        "utmSource": ["utm source", "utm_source"],
+        "utmMedium": ["utm medium", "utm_medium"],
+        "utmCampaign": ["utm campaign", "utm_campaign"],
         "utmTerm": [],
         "ticketColumn": []
       }
@@ -58,16 +58,17 @@
         "name": ["name"],
         "email": ["e-mail"],
         "phone": ["telefon"],
-        "utmSource": ["utm source"],
-        "utmMedium": ["utm medium"],
-        "utmCampaign": ["utm campaign"],
+        "utmSource": ["utm source", "utm_source"],
+        "utmMedium": ["utm medium", "utm_medium"],
+        "utmCampaign": ["utm campaign", "utm_campaign"],
         "appointmentAt": ["datum gespräch"]
       }
     },
     "closings": {
-      "detect": { "all": ["datum kauf", "produkt"], "any": [] },
+      "_comment": "Closings-Tab dieses Sheets: Kaufdatum steht in der Spalte 'Datum' (NICHT 'Datum Kauf'). detect über die eindeutigen Spalten Produkt + Umsatz netto. Die Summenzeile (ohne Datum) liefert closings/cash collect/umsatz paid+organisch.",
+      "detect": { "all": ["produkt", "umsatz netto"], "any": [] },
       "fields": {
-        "at": ["datum kauf"],
+        "at": ["datum"],
         "name": ["name"],
         "email": ["e-mail"],
         "phone": ["telefon"],
@@ -75,9 +76,9 @@
         "produkt": ["produkt"],
         "revenueNet": ["umsatz netto"],
         "revenueGross": ["umsatz brutto"],
-        "utmSource": ["utm source"],
-        "utmMedium": ["utm medium"],
-        "utmCampaign": ["utm campaign"],
+        "utmSource": ["utm source", "utm_source"],
+        "utmMedium": ["utm medium", "utm_medium"],
+        "utmCampaign": ["utm campaign", "utm_campaign"],
         "summaryCount": ["closings"],
         "summaryCashCollectPaid": ["cash collect paid"],
         "summaryCashCollectOrganisch": ["cash collect organisch"],
@@ -87,8 +88,8 @@
     }
   },
 
+  "_comment_questionnaire": "INAKTIV (hasQuality=false). Der 'Umfrage'-Tab dieses Sheets wird derzeit bewusst NICHT eingelesen (matcht dieses detect nicht). Sobald dort echte Fragebogen-Daten landen, hier das Spalten-Mapping setzen, hasQuality (und ggf. hasTickets) aktivieren und scoring.json anpassen.",
   "questionnaire": {
-    "_comment": "Mapping der Sheet-Spalten des Fragebogen-/Ticket-Tabs auf die internen Felder (nur relevant wenn hasTickets/hasQuality=true). Schlüssel sind normalisiert: kleingeschrieben, ohne ? : . – mehrere Varianten je Feld möglich (erste nicht-leere gewinnt). Die Antworten-Schlüssel (income, invested, realEstate, employment …) entsprechen den in scoring.json verwendeten Dimensionen.",
     "detect": {
       "any": ["monatliches einkommen", "immobilien im besitz"],
       "all": ["teilgenommen am", "vorname"]
@@ -103,13 +104,11 @@
     },
     "answers": {
       "employment": ["angestellt selbstständig oder unternehmer"],
-      "challenge": ["größte herausforderung im vermögensaufbau"],
       "income": ["monatliches einkommen"],
       "realEstate": ["immobilien im besitz"],
       "invested": ["geld investiert in den vermögensaufbau wenn ja wie viel"],
-      "relationship": ["beziehungsstand"],
-      "expectation": ["was erhoffst du dir von den 4 abenden"]
+      "relationship": ["beziehungsstand"]
     },
-    "leadTicketColumn": ["vip-ticket geholt am"]
+    "leadTicketColumn": []
   }
 }

@@ -11,9 +11,51 @@ import assert from 'node:assert/strict';
 import { parseSheets } from './parser.js';
 import { buildDataset } from './build.js';
 import { loadScoringConfig } from './scoring.js';
-import { loadProjectConfig } from './project.js';
 
-const project = loadProjectConfig();
+// Eigenständige Projekt-Config (entkoppelt von der LIVE config/project.config.json,
+// die ein anderes Projekt beschreibt). Dieser Test sichert das generische Mapping
+// gegen ein ZWEITES Sheet-Layout ab (Closings über "Datum Kauf", Overview über
+// "CVR Start") – komplementär zu parser.nicole.test.mjs.
+const project = {
+  name: 'Webinar-Funnel (Mapping-Test)',
+  features: { hasTickets: false, hasQuality: false },
+  sheet: {
+    overview: {
+      detect: { all: ['adspend'], any: ['creative', 'anzeigengruppe'] },
+      fields: {
+        key: ['creative', 'anzeigengruppe'], status: ['status'], adspend: ['adspend'],
+        clicks: ['ausg klicks'], cpc: ['cpc'], cvrStart: ['cvr start'], leads: ['leads'],
+      },
+    },
+    leads: {
+      detect: { all: ['datum', 'name'], any: ['leads aus ads', 'a/b variante'] },
+      fields: {
+        at: ['datum'], firstName: ['name'], lastName: [], email: ['e-mail'],
+        utmSource: ['utm source'], utmMedium: ['utm medium'], utmCampaign: ['utm campaign'],
+        utmTerm: [], ticketColumn: [],
+      },
+    },
+    termine: {
+      detect: { all: ['datum gespräch'], any: [] },
+      fields: {
+        at: ['datum'], name: ['name'], email: ['e-mail'], phone: ['telefon'],
+        utmSource: ['utm source'], utmMedium: ['utm medium'], utmCampaign: ['utm campaign'],
+        appointmentAt: ['datum gespräch'],
+      },
+    },
+    closings: {
+      detect: { all: ['datum kauf', 'produkt'], any: [] },
+      fields: {
+        at: ['datum kauf'], name: ['name'], email: ['e-mail'], phone: ['telefon'],
+        land: ['land'], produkt: ['produkt'], revenueNet: ['umsatz netto'], revenueGross: ['umsatz brutto'],
+        utmSource: ['utm source'], utmMedium: ['utm medium'], utmCampaign: ['utm campaign'],
+        summaryCount: ['closings'], summaryCashCollectPaid: ['cash collect paid'],
+        summaryCashCollectOrganisch: ['cash collect organisch'],
+        summaryUmsatzPaid: ['umsatz paid'], summaryUmsatzOrganisch: ['umsatz organisch'],
+      },
+    },
+  },
+};
 assert.equal(project.features.hasTickets, false, 'dieses Projekt hat keine Tickets');
 assert.equal(project.features.hasQuality, false, 'dieses Projekt hat kein Scoring');
 
