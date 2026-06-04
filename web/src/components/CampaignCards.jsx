@@ -188,6 +188,13 @@ export default function CampaignCards({ hierarchy, dailyByEntity, features = {},
                       </div>
                     );
                   })}
+                  {adsets.length === 0 && (
+                    <div className="muted" style={{ padding: '8px 2px' }}>
+                      {onlyActive
+                        ? 'Keine aktiven Anzeigengruppen in diesem Zeitraum – „Nur aktive anzeigen" ausschalten, um pausierte zu sehen.'
+                        : 'Keine Anzeigengruppen-Daten für diesen Zeitraum.'}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
