@@ -171,8 +171,19 @@ app.post('/api/chat', async (req, res) => {
 // --- Statisches Frontend (Production-Build) ---------------------------------
 const distDir = path.join(ROOT, 'dist');
 if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir));
-  app.get('*', (req, res) => res.sendFile(path.join(distDir, 'index.html')));
+  // Gehashte Assets (index-<hash>.js/.css) dürfen gecacht werden – index.html
+  // selbst NICHT: sonst hält der Browser eine alte index.html mit veralteten
+  // Asset-Hashes, die nach einem Redeploy nicht mehr existieren -> CSS/JS laden
+  // nicht -> ungestyltes Dashboard.
+  app.use(express.static(distDir, { index: false }));
+  // SPA-Fallback NUR für echte Seiten-Routen (ohne Datei-Endung). Eine fehlende
+  // Datei wie /assets/x.css muss sauber 404en statt index.html (text/html)
+  // zurückzuliefern – andernfalls scheitert das Styling stillschweigend.
+  app.get('*', (req, res, next) => {
+    if (path.extname(req.path)) return next(); // fehlende Datei -> Express-404
+    res.setHeader('Cache-Control', 'no-cache');
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
 } else {
   app.get('/', (req, res) =>
     res
