@@ -86,7 +86,7 @@ export default function App() {
     const paid = filteredTermine.filter((t) => t.sourceType === 'paid').length;
     return { has: (data?.counts?.termine || 0) > 0, total, paid, organic: total - paid };
   }, [filteredTermine, data]);
-  // Funnel-Stufe "Closings" (Verkäufe + Umsatz; Cash Collect aus der Sheet-Summe)
+  // Funnel-Stufe "Closings" (Verkäufe + Umsatz + Cash Collect, je netto/brutto)
   const filteredClosings = useMemo(() => (data ? applyFilters(data.closings || [], filters) : []), [data, filters]);
   const closingsKpis = useMemo(() => {
     const sum = (arr, f) => arr.reduce((s, c) => s + (f(c) || 0), 0);
@@ -96,6 +96,10 @@ export default function App() {
     const nettoPaid = sum(paidRows, (c) => c.revenueNet);
     const brutto = sum(filteredClosings, (c) => c.revenueGross);
     const bruttoPaid = sum(paidRows, (c) => c.revenueGross);
+    const ccNetto = sum(filteredClosings, (c) => c.cashCollectNet);
+    const ccNettoPaid = sum(paidRows, (c) => c.cashCollectNet);
+    const ccBrutto = sum(filteredClosings, (c) => c.cashCollectGross);
+    const ccBruttoPaid = sum(paidRows, (c) => c.cashCollectGross);
     return {
       has: (data?.counts?.closings || 0) > 0,
       total,
@@ -107,6 +111,12 @@ export default function App() {
       brutto,
       bruttoPaid,
       bruttoOrganic: brutto - bruttoPaid,
+      ccNetto,
+      ccNettoPaid,
+      ccNettoOrganic: ccNetto - ccNettoPaid,
+      ccBrutto,
+      ccBruttoPaid,
+      ccBruttoOrganic: ccBrutto - ccBruttoPaid,
     };
   }, [filteredClosings, data]);
   const dist = useMemo(() => (data ? tierDistribution(filtered, tiers) : {}), [data, filtered, tiers]);

@@ -100,6 +100,8 @@ assert.equal(ds.counts.paidClosings, 1, 'ein Verkauf über Ads (CBO), einer orga
 const diana = ds.closings.find((c) => c.email === 'diana@gmx.de');
 assert.equal(diana.sourceType, 'paid', 'CBO-Verkauf = bezahlt');
 assert.equal(diana.revenueGross, 5900, 'Umsatz brutto geparst');
+assert.equal(diana.cashCollectNet, 4957.98, 'CC netto (Spalte G) geparst');
+assert.equal(diana.cashCollectGross, 5900, 'CC brutto (Spalte H) geparst');
 assert.equal(ds.closingsSummary.umsatzPaid, 20191.68, 'Umsatz Paid aus Summenzeile');
 
 console.log('✓ Alle Nicole-Luzar-Mapping-Tests bestanden');

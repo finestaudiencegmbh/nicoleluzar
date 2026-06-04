@@ -76,6 +76,8 @@
         "produkt": ["produkt"],
         "revenueNet": ["umsatz netto"],
         "revenueGross": ["umsatz brutto"],
+        "ccNet": ["cc netto"],
+        "ccGross": ["cc brutto"],
         "utmSource": ["utm source", "utm_source"],
         "utmMedium": ["utm medium", "utm_medium"],
         "utmCampaign": ["utm campaign", "utm_campaign"],

@@ -203,6 +203,8 @@ function parseClosingRow(o, fields) {
       produkt: norm(pickRaw(o, fields.produkt)),
       revenueNet: num(pickRaw(o, fields.revenueNet)),
       revenueGross: num(pickRaw(o, fields.revenueGross)),
+      cashCollectNet: num(pickRaw(o, fields.ccNet)),
+      cashCollectGross: num(pickRaw(o, fields.ccGross)),
       utm: {
         source: norm(pickRaw(o, fields.utmSource)),
         medium: norm(pickRaw(o, fields.utmMedium)),

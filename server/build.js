@@ -256,6 +256,8 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
       produkt: c.produkt,
       revenueNet: c.revenueNet,
       revenueGross: c.revenueGross,
+      cashCollectNet: c.cashCollectNet,
+      cashCollectGross: c.cashCollectGross,
       wonAt: c.wonAt,
       sourceType: paid ? 'paid' : 'organic',
       campaign,

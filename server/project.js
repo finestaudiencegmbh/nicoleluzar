@@ -79,6 +79,8 @@ export const DEFAULT_PROJECT = {
         produkt: ['produkt'],
         revenueNet: ['umsatz netto'],
         revenueGross: ['umsatz brutto'],
+        ccNet: ['cc netto'],
+        ccGross: ['cc brutto'],
         utmSource: ['utm_source', 'utm source'],
         utmMedium: ['utm_medium', 'utm medium'],
         utmCampaign: ['utm_campaign', 'utm campaign'],
