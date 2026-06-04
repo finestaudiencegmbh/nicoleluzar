@@ -100,7 +100,7 @@ const closingsSheet = {
   values: [
     ['Datum Kauf', 'Name', 'E-Mail', 'Telefon', 'Land', 'Produkt', 'Umsatz netto', 'Umsatz brutto', 'UTM Source', 'UTM Medium', 'UTM  Campaign', 'Closings', 'Closings Paid', 'Umsatz Paid', 'Cash Collect Paid', 'Umsatz Organisch', 'Cash Collect Organisch'],
     ['', '', '', '', '', '', '5.665,00 €', '5.998,00 €', '', '', '', '2', '1', '1.998,00 €', '1.665,00 €', '4.000,00 €', '3.500,00 €'], // Summenzeile
-    ['2026-03-04T08:01Z', 'Ivana Ebert', 'ivana@ebert.com', '', 'Österreich', 'Gefühlsklar', '1.665,00 €', '1.998,00 €', '20260220 FA - AG7 - Selbstständige Winning', 'AG7 Win Creative 9', 'Launch Live Webinar', '', '', '', '', '', ''],
+    ['2026-03-04T08:01Z', 'Ivana Ebert', 'ivana@ebert.com', '', 'Österreich', 'Gefühlsklar', '1.665,00 €', '1.998,00 €', 'CBO AG7: Selbstständige', 'AG7 Creative 9', 'CBO B2C // Live-Webinar', '', '', '', '', '', ''],
     ['2026-03-11T21:45Z', 'Elisabeth U.', 'eli@outlook.de', '', 'Deutschland', 'Gefühlsklar', '3.333,00 €', '4.000,00 €', '', '', '', '', '', '', '', '', ''],
   ],
 };
@@ -139,9 +139,9 @@ assert.ok(terminEdda.appointmentAt, 'Gesprächs-Datum übernommen');
 
 // Closings-Funnelstufe
 assert.equal(ds.counts.closings, 2, 'zwei Verkäufe (Summenzeile ignoriert)');
-assert.equal(ds.counts.paidClosings, 1, 'ein Verkauf über Ads (FA - AG7), einer organisch');
+assert.equal(ds.counts.paidClosings, 1, 'ein Verkauf über Ads (CBO), einer organisch');
 const ivana = ds.closings.find((c) => c.email === 'ivana@ebert.com');
-assert.equal(ivana.sourceType, 'paid', 'FA-AG7-Verkauf = bezahlt');
+assert.equal(ivana.sourceType, 'paid', 'CBO-Verkauf = bezahlt');
 assert.equal(ivana.revenueGross, 1998, 'Umsatz brutto geparst');
 assert.equal(ds.closingsSummary.cashCollect, 5165, 'Cash Collect aus Summenzeile (1.665 + 3.500)');
 

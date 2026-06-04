@@ -35,7 +35,7 @@ const leadsSheet = {
   values: [
     ['Datum', 'Name', 'E-Mail', 'Telefonnummer', 'UTM Source', 'UTM Medium', 'UTM  Campaign', 'Leads', 'Leads aus Ads', 'Leads aus Organisch', 'Leads aus Newsletter', 'Leads aus Instagram', 'A/B Variante', 'Variante 1', 'Variante 1', 'Variante 2', 'Variante 2'],
     ['', '', '', '', '0', '', '', '187', '755', '-568', '0', '0', '', '0', '', '0', ''], // Summenzeile -> ignorieren
-    ['2026-03-14 00:38:01 +0000', 'Jessica Semelka', 'jessica.semelka@gmail.com', '', 'HW Show | Broad Reiten DACH', '2026-01 - Hufrehe - Body 2 + Hook 6', 'Prospecting | CBO 2', '', '', '', '', '', '', '', '', '', ''],
+    ['2026-03-14 00:38:01 +0000', 'Jessica Semelka', 'jessica.semelka@gmail.com', '', 'Kampagne 1  - DACH - Broad Reiten', 'Ich suche Pferdemenschen 2.0', 'HW-Show - ABO', '', '', '', '', '', '', '', '', '', ''],
     ['2026-03-15 09:10:00 +0000', 'Nadja Newsletter', 'nadja@gmx.de', '', 'newsletter-maerz', 'link', 'sacredlife', '', '', '', '', '', '', '', '', '', ''],
   ],
 };
@@ -46,7 +46,7 @@ const termineSheet = {
   values: [
     ['Datum', 'Name', 'E-Mail', 'Telefon', 'UTM Source', 'UTM Medium', 'UTM  Campaign', 'Datum Gespräch', 'Termine', 'Termine aus Ads', 'Zielgruppe?', 'Feedback', 'UTM Source', 'UTM Medium', 'UTM  Campaign'],
     ['', '', '', '', 'Lead', '', '', '', '0', '0', '', '', 'Termine', '', ''], // Summenzeile -> ignorieren
-    ['2026-04-16 19:02:18', 'Jessica Semelka', 'jessica.semelka@gmail.com', '', 'HW Show | Broad Reiten DACH', '2026-01 - Hufrehe - Body 2 + Hook 6', 'Prospecting | CBO 2', '2026-04-18 12:30:00 +0000', '', '', '', '', '', '', ''],
+    ['2026-04-16 19:02:18', 'Jessica Semelka', 'jessica.semelka@gmail.com', '', 'Kampagne 1  - DACH - Broad Reiten', 'Ich suche Pferdemenschen 2.0', 'HW-Show - ABO', '2026-04-18 12:30:00 +0000', '', '', '', '', '', '', ''],
     ['2026-04-16 19:43:48', 'Petra Seher', 'petra.seher@gmx.at', '', 'show-calendly', 'live', 'show-calendly', '2026-04-17 20:00:00 +0000', '', '', '', '', '', '', ''],
   ],
 };
@@ -57,7 +57,7 @@ const closingsSheet = {
   values: [
     ['Datum', 'Name', 'E-Mail', 'Telefon', 'Land', 'Produkt', 'CC netto', 'CC brutto', 'Umsatz netto', 'Umsatz brutto', 'UTM Source', 'UTM Medium', 'UTM  Campaign', 'Closings', 'Closings Paid', 'Umsatz Paid', 'Cash Collect Paid', 'Umsatz Organisch', 'Cash Collect Organisch'],
     ['', '', '', '', '', '', '44.151,83 €', '51.439,28 €', '72.706,80 €', '85.414,00 €', '', '', '', '42', '10', '20.191,68 €', '12.171,07 €', '52.515,12 €', '31.980,76 €'], // Summenzeile
-    ['2026-03-31', 'Diana v.Dall Armi', 'diana@gmx.de', '', 'Deutschland', 'Leben in Leichtigkeit', '4.957,98 €', '5.900,00 €', '4.957,98 €', '5.900,00 €', 'HW Show | Broad Reiten DACH', 'Body 2', 'Prospecting | CBO 2', '', '', '', '', '', ''],
+    ['2026-03-31', 'Diana v.Dall Armi', 'diana@gmx.de', '', 'Deutschland', 'Leben in Leichtigkeit', '4.957,98 €', '5.900,00 €', '4.957,98 €', '5.900,00 €', 'Kampagne 1  - DACH - Broad Reiten', 'Ich suche Pferdemenschen 2.0', 'HW-Show - ABO', '', '', '', '', '', ''],
     ['2026-04-01', 'Alexandra Vedana', 'alexa@proton.me', '', 'Schweiz', 'Leben in Leichtigkeit', '5.457,91 €', '5.900,00 €', '5.457,91 €', '5.900,00 €', '', '', '', '', '', '', '', '', ''],
   ],
 };
@@ -88,7 +88,7 @@ const jessica = ds.leads.find((l) => l.email === 'jessica.semelka@gmail.com');
 const nadja = ds.leads.find((l) => l.email === 'nadja@gmx.de');
 assert.ok(jessica && nadja, 'beide Leads im Dataset');
 assert.equal(jessica.name, 'Jessica Semelka', 'Einzel-Spalte "Name" korrekt übernommen');
-assert.equal(jessica.sourceType, 'paid', 'CBO-Kampagne = bezahlt (paidPatterns)');
+assert.equal(jessica.sourceType, 'paid', 'Ads-Lead (Kampagne/Broad Reiten/HW-Show, OHNE Pipe) = bezahlt');
 assert.equal(nadja.sourceType, 'organic', 'newsletter/sacredlife = organisch');
 assert.equal(jessica.hasTicket, false, 'keine Ticket-Logik in diesem Projekt');
 assert.equal(jessica.quality, null, 'kein Scoring in diesem Projekt');
@@ -96,9 +96,9 @@ assert.equal(jessica.quality, null, 'kein Scoring in diesem Projekt');
 // Funnel: Termine + Closings
 assert.equal(ds.counts.termine, 2, 'zwei Termine');
 assert.equal(ds.counts.closings, 2, 'zwei Verkäufe (Summenzeile ignoriert)');
-assert.equal(ds.counts.paidClosings, 1, 'ein Verkauf über Ads (CBO), einer organisch');
+assert.equal(ds.counts.paidClosings, 1, 'ein Verkauf über Ads, einer organisch');
 const diana = ds.closings.find((c) => c.email === 'diana@gmx.de');
-assert.equal(diana.sourceType, 'paid', 'CBO-Verkauf = bezahlt');
+assert.equal(diana.sourceType, 'paid', 'Ads-Verkauf = bezahlt');
 assert.equal(diana.revenueGross, 5900, 'Umsatz brutto geparst');
 assert.equal(diana.cashCollectNet, 4957.98, 'CC netto (Spalte G) geparst');
 assert.equal(diana.cashCollectGross, 5900, 'CC brutto (Spalte H) geparst');

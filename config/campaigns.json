@@ -7,9 +7,9 @@
   "_comment_overrides": "Manuelle Korrektur, falls das Meta-Ziel nicht passt. Schlüssel = Kampagnenname (Teilstring, case-insensitiv), Wert = true (zählt als Lead-Kampagne) oder false (Traffic/ausschließen). Overrides haben Vorrang vor dem Ziel.",
   "overrides": {},
 
-  "_comment_classification": "Lead-Quellen-Klassifizierung (build.js). paidPatterns hat VORRANG: kommt einer dieser Begriffe in source/medium/campaign/term vor, gilt der Lead als bezahlt (nötig, weil die Ad-Anzeigengruppen hier 'CBO AG2: …' heißen und KEIN '|'-Schema haben). organicPatterns: danach geprüft – kommt einer dieser Begriffe vor, gilt der Lead als organisch. unattributablePaidLabel: bezahlte Leads mit rein numerischer Source sind Paid, aber nicht eindeutig zuordenbar.",
-  "paidPatterns": ["cbo", "fa -", "ag1:", "ag2:", "ag3:", "ag4", "ag5", "ag6", "ag7", "winning", "launch live webinar"],
-  "organicPatterns": ["email", "newsletter", "website", "bio", "manychat", "instagram", "sacredlife", "direkt"],
+  "_comment_classification": "Lead-Quellen-Klassifizierung (build.js). paidPatterns hat VORRANG: kommt einer dieser Begriffe (Teilstring, case-insensitiv) in source/medium/campaign/term vor, gilt der Lead als bezahlt. Nötig, weil die Ads hier KEIN '|'-Schema mehr nutzen, sondern Namen wie 'Kampagne 1 - DACH - Broad Reiten', 'VSL - DACH - Broad Reiten', Campaign 'HW-Show - ABO' / 'Prospecting - ABO' und Placement-Quellen 'Facebook_Mobile_Feed' / 'Instagram_Feed'. organicPatterns: danach geprüft. unattributablePaidLabel: bezahlte Leads mit rein numerischer Source sind Paid, aber nicht eindeutig zuordenbar.",
+  "paidPatterns": ["broad reiten", "kampagne ", "prospecting", "cbo", "vsl", "hw show", "hw-show", "dynamic video", "dynamic cbo", "laa", "hufrehe", "pferdemenschen", "bestperformer", "facebook_", "instagram_"],
+  "organicPatterns": ["email", "newsletter", "website", "bio", "manychat", "instagram-", "direkt", "youtube", "reels-post", "profilefeed", "calendly", "sacredlife"],
   "organicLabel": "(organisch)",
   "unattributablePaidLabel": "(Paid · nicht zuordenbar)"
 }
