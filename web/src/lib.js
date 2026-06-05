@@ -11,7 +11,9 @@ export const fmtScore = (n) => (n == null ? '–' : String(Math.round(n)));
 export const fmtDate = (iso) => {
   if (!iso) return '–';
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '–' : d.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+  // In UTC formatieren – die Sheet-Zeitstempel sind +0000 und sollen 1:1 so
+  // angezeigt werden wie im Sheet (kein Versatz durch die Browser-Zeitzone).
+  return Number.isNaN(d.getTime()) ? '–' : d.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' });
 };
 
 // Tagesschlüssel = UTC-Datum aus dem Zeitstempel. Das entspricht exakt dem im
