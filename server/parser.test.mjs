@@ -7,7 +7,19 @@
 import assert from 'node:assert/strict';
 import { parseSheets } from './parser.js';
 import { buildDataset } from './build.js';
-import { loadScoringConfig } from './scoring.js';
+
+// Eigenständige GEWICHTETE Scoring-Config (entkoppelt von der Live-scoring.json,
+// die inzwischen das criteria-Modell nutzt). Dieser Test deckt den gewichteten
+// Ticket-/Fragebogen-Pfad ab.
+const WEIGHTED_CFG = {
+  weights: { income: 0.8, invested: 0.08, realEstate: 0.07, employment: 0.05 },
+  householdRule: { enabled: true, incomeBelow: 3500, relationships: ['verheiratet', 'in einer beziehung', 'beziehung', 'partnerschaft', 'liiert'], cappedScore: 20 },
+  income: { tiers: [{ atLeast: 5000, score: 1.0 }, { atLeast: 3500, score: 0.8 }, { atLeast: 2500, score: 0.5 }, { atLeast: 1500, score: 0.25 }, { atLeast: 1000, score: 0.12 }, { atLeast: 0, score: 0.05 }] },
+  invested: { none: 0.05, monthly: 0.6, yesGeneric: 0.5, fullScoreAt: 10000 },
+  realEstate: { rules: [{ match: 'mehrere', score: 1.0 }, { match: 'zwei', score: 1.0 }, { match: 'ja', score: 0.7 }, { match: 'noch nicht', score: 0.3 }, { match: 'nein', score: 0.0 }] },
+  employment: { scores: { unternehmer: 1.0, selbststaendig: 0.9, angestellt: 0.75, rentner: 0.4, arbeitssuchend: 0.2 }, default: 0.5 },
+  tiers: [{ key: 'A', label: 'A · Top', min: 75, color: '#16a34a' }, { key: 'B', label: 'B · Gut', min: 55, color: '#65a30d' }, { key: 'C', label: 'C · Mittel', min: 35, color: '#d97706' }, { key: 'D', label: 'D · Schwach', min: 0, color: '#dc2626' }],
+};
 
 const overviewSheet = {
   title: 'Anzeigengruppen',
@@ -44,7 +56,7 @@ const ticketsSheet = {
 // zweiter Ticket-Tab mit derselben Person (muss dedupliziert werden)
 const ticketsSheet2 = { title: 'VIP Ticket (raw)', values: ticketsSheet.values.map((r) => [...r]) };
 
-const cfg = loadScoringConfig();
+const cfg = WEIGHTED_CFG;
 const parsed = parseSheets([overviewSheet, leadsSheet, ticketsSheet, ticketsSheet2]);
 
 assert.equal(parsed.overview.length, 2, 'beide Übersichts-Tabellen erkannt');

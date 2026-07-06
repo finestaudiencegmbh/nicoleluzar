@@ -96,6 +96,10 @@ function classifyUtm(utm, paid, organicLabel, unattribLabel) {
 export function buildDataset({ leads, tickets, overview, termine = [], closings = [], closingsSummary = null }, cfg, project = DEFAULT_PROJECT) {
   const warnings = [];
   const { hasTickets = true, hasQuality = true } = project.features || {};
+  // Fragebogen-Modus "criteria" (Nicole): die Umfrage-Zeilen sind ihre eigene
+  // Auswertungseinheit (eigenes Datum + UTM Medium) und werden NICHT mit dem
+  // Leads-Tab verknüpft. Kein Per-Lead-Score, keine Umfrage-Zeilen als Leads.
+  const surveyMode = hasQuality && cfg?.model === 'criteria';
   const paidAdsets = new Set(overview.map((o) => o.adset.toLowerCase()));
   const campCfg = loadCampaignConfig();
   const organicPatterns = campCfg.organicPatterns || ['manychat', 'bio'];
@@ -119,7 +123,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
   for (const l of leads) {
     const email = l.email || '';
     if (email) seenLeadEmails.add(email);
-    const t = email ? ticketByEmail.get(email) : null;
+    const t = (!surveyMode && email) ? ticketByEmail.get(email) : null;
     recs.push({
       email,
       firstName: l.firstName || t?.firstName || '',
@@ -137,7 +141,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
 
   // 2) VIP-Tickets, deren E-Mail in KEINER Lead-Zeile vorkommt, als eigene
   //    Datensätze ergänzen (z. B. nur im VIP-Tab erfasste Personen).
-  for (const t of tickets) {
+  for (const t of (surveyMode ? [] : tickets)) {
     // mit einer Lead-Zeile verknüpft? (beide Mail-Varianten prüfen)
     if ((t.email && seenLeadEmails.has(t.email)) || (t.emailTypeform && seenLeadEmails.has(t.emailTypeform))) continue;
     const email = t.email || t.emailTypeform || '';
@@ -158,8 +162,9 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
   const records = [];
   for (const r of recs) {
     const paid = isPaid(r.utm, paidAdsets, organicPatterns, paidPatterns);
-    // Qualität nur wenn das Projekt ein Fragebogen-/Scoring-System hat.
-    const quality = hasQuality ? computeQuality(r.answers, cfg) : null;
+    // Per-Lead-Qualität nur im gewichteten Modell. Im criteria-Modus (Nicole)
+    // ist die Umfrage die eigene Einheit -> siehe qualitySummary weiter unten.
+    const quality = (hasQuality && !surveyMode) ? computeQuality(r.answers, cfg) : null;
 
     // Dimensions-Labels je nach Quelle/Zuordenbarkeit:
     // - organisch: alles unter einem Sammel-Label zusammenfassen
@@ -266,8 +271,27 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
     };
   });
 
+  // Lead-Qualität (criteria-Modell): jede Umfrage-Zeile ab validFrom bewerten.
+  // Datenbasis = die Umfrage selbst (eigenes Datum + UTM Medium). Der Client
+  // aggregiert daraus Verteilung/Tagestrend/Ad-Breakdown (zeitraumabhängig).
+  let qualitySummary = null;
+  if (surveyMode) {
+    const validFrom = cfg.validFrom || null;
+    const rows = [];
+    for (const t of tickets) {
+      const day = (t.at || '').slice(0, 10);
+      if (!day) continue;
+      if (validFrom && day < validFrom) continue; // nur ab Stichtag bewerten
+      const q = computeQuality(t.answers, cfg);
+      if (!q) continue;
+      rows.push({ day, tier: q.tier, medium: collapse(t.utmMedium) || '(kein Medium)' });
+    }
+    qualitySummary = { validFrom, tiers: cfg.tiers || [], rows };
+  }
+
   return {
     leads: records,
+    quality: qualitySummary,
     overview,
     overviewByAdset: Object.fromEntries(overviewByAdset),
     termine: termineRecords,

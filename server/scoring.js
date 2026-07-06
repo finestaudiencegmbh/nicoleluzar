@@ -103,13 +103,53 @@ function tierFor(score, cfg) {
 }
 
 /**
- * Berechnet die Lead-Qualität (0..100) aus den VIP-Ticket-Antworten.
- * Fehlende Dimensionen werden ausgeklammert, das Ergebnis auf die
- * vorhandenen Gewichte renormiert – fehlende Antworten ziehen den Score
- * also nicht unfair nach unten.
+ * Berechnet die Lead-Qualität aus den Fragebogen-Antworten. Zwei Modelle:
+ *  - cfg.model === 'criteria': deterministisches KO-/Kriterien-Zählmodell
+ *    (Nicole Luzar). Kein numerischer Score, nur Tier A/B/C/D.
+ *  - sonst: gewichtetes 0..100-Modell (Bestandsverhalten).
  */
 export function computeQuality(answers, cfg) {
   if (!answers) return null;
+  if (cfg && cfg.model === 'criteria') return computeCriteria(answers, cfg);
+  return computeWeighted(answers, cfg);
+}
+
+/** Exakter Vergleich nach Whitespace-Trim (keine Fuzzy-Logik). */
+const trimVal = (answers, field) => String(answers?.[field] ?? '').trim();
+const eqAny = (v, list) => (list || []).some((x) => v === String(x).trim());
+
+/**
+ * Kriterien-Modell: 1) KO-Prüfung (eine Regel reicht -> D). 2) sonst erfüllte
+ * A-Kriterien zählen -> A = tierCounts.A (alle), B = tierCounts.B, sonst C.
+ * Leere/unbekannte Werte erfüllen kein Kriterium und lösen kein KO aus.
+ * Deterministisch: gleiche Eingabe -> gleiches Tier.
+ */
+function computeCriteria(answers, cfg) {
+  const meta = (key) => (cfg.tiers || []).find((t) => t.key === key) || {};
+  for (const rule of cfg.ko || []) {
+    if (eqAny(trimVal(answers, rule.field), rule.equals)) {
+      return { score: null, tier: 'D', tierLabel: meta('D').label ?? 'D', count: 0, ko: true, breakdown: {} };
+    }
+  }
+  let count = 0;
+  const breakdown = {};
+  for (const rule of cfg.aCriteria || []) {
+    const met = eqAny(trimVal(answers, rule.field), rule.equals);
+    breakdown[rule.field] = met;
+    if (met) count += 1;
+  }
+  const A = cfg.tierCounts?.A ?? 5;
+  const B = cfg.tierCounts?.B ?? 4;
+  const key = count >= A ? 'A' : count >= B ? 'B' : 'C';
+  return { score: null, tier: key, tierLabel: meta(key).label ?? key, count, ko: false, breakdown };
+}
+
+/**
+ * Gewichtetes Modell (0..100) aus den VIP-Ticket-Antworten. Fehlende
+ * Dimensionen werden ausgeklammert und das Ergebnis auf die vorhandenen
+ * Gewichte renormiert – fehlende Antworten ziehen den Score nicht nach unten.
+ */
+function computeWeighted(answers, cfg) {
   const subs = {
     income: scoreIncome(answers.income, cfg),
     invested: scoreInvested(answers.invested, cfg),

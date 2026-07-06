@@ -14,7 +14,7 @@
   "_comment_features": "Feature-Flags. hasTickets=false blendet ALLE ticketbezogenen KPIs/Spalten aus (€/Ticket, CVR Ticket, Kosten/Ticket, VIP). hasQuality=false blendet das komplette Fragebogen-/Scoring-System aus (Quali-Rate, Ø Quali, Tier-Verteilung, Fragebogen-Filter). Dieses Projekt: weder Tickets noch Fragebogen.",
   "features": {
     "hasTickets": false,
-    "hasQuality": false
+    "hasQuality": true
   },
 
   "_comment_ticketLabel": "Beschriftung der Ticket-Entität (nur relevant wenn hasTickets=true).",
@@ -90,26 +90,26 @@
     }
   },
 
-  "_comment_questionnaire": "INAKTIV (hasQuality=false). Der 'Umfrage'-Tab dieses Sheets wird derzeit bewusst NICHT eingelesen (matcht dieses detect nicht). Sobald dort echte Fragebogen-Daten landen, hier das Spalten-Mapping setzen, hasQuality (und ggf. hasTickets) aktivieren und scoring.json anpassen.",
+  "_comment_questionnaire": "Mapping des 'Umfrage NEU'-Tabs (Lead-Qualitäts-Scoring, hasQuality=true). Erkannt über die Spaltenüberschriften (detect). Die answers-Schlüssel (alter, berufsstand, anzahlPferde, pferdeProbleme, invest) entsprechen den in scoring.json (model: 'criteria') verwendeten Feldern. utmMedium dient der Ad-Aufschlüsselung. Bewertet werden nur Zeilen ab scoring.json -> validFrom.",
   "questionnaire": {
     "detect": {
-      "any": ["monatliches einkommen", "immobilien im besitz"],
-      "all": ["teilgenommen am", "vorname"]
+      "all": ["alter", "berufsstand", "anzahl pferde"],
+      "any": []
     },
     "fields": {
-      "at": ["teilgenommen am"],
-      "firstName": ["vorname"],
-      "lastName": ["nachname"],
-      "email": ["e-mail (funnelcockpit)", "e-mail (typeform)", "e-mail"],
-      "emailTypeform": ["e-mail (typeform)"],
-      "phone": ["handynummer"]
+      "at": ["datum"],
+      "firstName": ["name"],
+      "lastName": [],
+      "email": ["e-mail"],
+      "phone": ["telefonnummer"],
+      "utmMedium": ["utm medium"]
     },
     "answers": {
-      "employment": ["angestellt selbstständig oder unternehmer"],
-      "income": ["monatliches einkommen"],
-      "realEstate": ["immobilien im besitz"],
-      "invested": ["geld investiert in den vermögensaufbau wenn ja wie viel"],
-      "relationship": ["beziehungsstand"]
+      "alter": ["alter"],
+      "berufsstand": ["berufsstand"],
+      "anzahlPferde": ["anzahl pferde"],
+      "pferdeProbleme": ["pferde mit problemen"],
+      "invest": ["geld in lösung investiert"]
     },
     "leadTicketColumn": []
   }

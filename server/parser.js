@@ -248,9 +248,11 @@ function parseTicketRow(o, project) {
     emailTypeform: normEmail(pickRaw(o, f.emailTypeform)),
     phone: norm(pickRaw(o, f.phone)),
     answers,
+    // UTM Medium des Fragebogens (für die Ad-Aufschlüsselung der Lead-Qualität).
+    utmMedium: norm(pickRaw(o, f.utmMedium)) || norm(o['utm_medium']),
     utm: {
       source: norm(o['utm_source']),
-      medium: norm(o['utm_medium']),
+      medium: norm(pickRaw(o, f.utmMedium)) || norm(o['utm_medium']),
       campaign: norm(o['utm_campaign']),
       term: norm(o['utm_term']),
     },

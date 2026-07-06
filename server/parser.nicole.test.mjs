@@ -17,7 +17,7 @@ import { loadProjectConfig } from './project.js';
 const project = loadProjectConfig();
 assert.equal(project.name, 'Nicole Luzar', 'Projekt-Config geladen');
 assert.equal(project.features.hasTickets, false, 'dieses Projekt hat keine Tickets');
-assert.equal(project.features.hasQuality, false, 'dieses Projekt hat kein Scoring');
+assert.equal(project.features.hasQuality, true, 'dieses Projekt nutzt Lead-Qualität (Umfrage NEU)');
 
 // Creative-Übersicht (Adspend je Creative) – echte Kopfzeile mit "CVR Webinar".
 const overviewSheet = {
@@ -91,7 +91,7 @@ assert.equal(jessica.name, 'Jessica Semelka', 'Einzel-Spalte "Name" korrekt übe
 assert.equal(jessica.sourceType, 'paid', 'Ads-Lead (Kampagne/Broad Reiten/HW-Show, OHNE Pipe) = bezahlt');
 assert.equal(nadja.sourceType, 'organic', 'newsletter/sacredlife = organisch');
 assert.equal(jessica.hasTicket, false, 'keine Ticket-Logik in diesem Projekt');
-assert.equal(jessica.quality, null, 'kein Scoring in diesem Projekt');
+assert.equal(jessica.quality, null, 'Leads tragen im criteria-Modus keinen Per-Lead-Score (Umfrage ist eigene Einheit)');
 
 // Funnel: Termine + Closings
 assert.equal(ds.counts.termine, 2, 'zwei Termine');

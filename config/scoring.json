@@ -1,78 +1,31 @@
 {
-  "_comment": "Bewertungsmodell für die Lead-Qualität. Alle Werte sind bewusst einfach gehalten und können angepasst werden. Geändert wird hier – nicht im Code. Nach dem Speichern im Dashboard auf 'Aktualisieren' klicken.",
+  "_comment": "Lead-Scoring Nicole Luzar – KRITERIEN-MODELL (model: 'criteria'). Gilt für Umfrage-Zeilen mit Datum ab 'validFrom'. Ablauf: 1) KO-Prüfung -> sofort Tier D, sobald EINE der 'ko'-Regeln zutrifft. 2) sonst die erfüllten 'aCriteria' zählen -> A = alle (tierCounts.A), B = tierCounts.B, sonst C. Vergleich: exakt nach Whitespace-Trim (keine Fuzzy-Logik). Leere/unbekannte Werte erfüllen kein Kriterium und lösen KEIN KO aus. Nach Änderungen im Dashboard auf 'Aktualisieren'.",
 
-  "weights": {
-    "income": 0.8,
-    "invested": 0.08,
-    "realEstate": 0.07,
-    "employment": 0.05
-  },
+  "model": "criteria",
+  "validFrom": "2026-07-03",
 
-  "householdRule": {
-    "_comment": "Harte Regel: niedriges Haushaltseinkommen. Wer unter 'incomeBelow' €/Monat verdient UND einen der 'relationships'-Werte angibt (Partner-Haushalt), wird automatisch als schlechte Qualität (Tier D) gewertet – unabhängig vom rechnerischen Score. cappedScore = angezeigter Score in diesem Fall.",
-    "enabled": true,
-    "incomeBelow": 3500,
-    "relationships": ["verheiratet", "in einer beziehung", "beziehung", "partnerschaft", "liiert"],
-    "cappedScore": 20
-  },
+  "ko": [
+    { "field": "berufsstand", "equals": ["Rentnerin", "Arbeitssuchend"] },
+    { "field": "alter", "equals": ["60 Jahre oder älter"] },
+    { "field": "anzahlPferde", "equals": ["0"] },
+    { "field": "pferdeProbleme", "equals": ["Keins"] },
+    { "field": "invest", "equals": ["Nein"] }
+  ],
 
-  "income": {
-    "_comment": "Monatliches Einkommen als Stufen (0..1), passend zur Ampel im Sheet. Es wird der Mittelwert der erkannten Spanne gebildet und der ersten passenden Stufe (atLeast = untere Grenze) zugeordnet.",
-    "tiers": [
-      { "atLeast": 5000, "score": 1.0 },
-      { "atLeast": 3500, "score": 0.8 },
-      { "atLeast": 2500, "score": 0.5 },
-      { "atLeast": 1500, "score": 0.25 },
-      { "atLeast": 1000, "score": 0.12 },
-      { "atLeast": 0, "score": 0.05 }
-    ]
-  },
+  "aCriteria": [
+    { "field": "alter", "equals": ["40 - 59 Jahre", "25 - 39 Jahre"] },
+    { "field": "berufsstand", "equals": ["Angestellte", "Selbstständig / Unternehmerin"] },
+    { "field": "anzahlPferde", "equals": ["2-3", "4-6", "7+"] },
+    { "field": "pferdeProbleme", "equals": ["Ein Pferd", "Mehrere Pferde"] },
+    { "field": "invest", "equals": ["2.500 - 5.000 €", "Über 5.000 €"] }
+  ],
 
-  "invested": {
-    "_comment": "Bereits in den Vermögensaufbau investiertes Kapital. Freitext wird nach Stichworten/Beträgen bewertet (0..1).",
-    "none": 0.05,
-    "monthly": 0.6,
-    "yesGeneric": 0.5,
-    "fullScoreAt": 10000
-  },
-
-  "realEstate": {
-    "_comment": "Immobilienbesitz. Schlüssel werden case-insensitiv als Teilstring geprüft (von oben nach unten).",
-    "rules": [
-      { "match": "mehrere", "score": 1.0 },
-      { "match": "zwei", "score": 1.0 },
-      { "match": "ja", "score": 0.7 },
-      { "match": "noch nicht", "score": 0.3 },
-      { "match": "nein", "score": 0.0 }
-    ]
-  },
-
-  "employment": {
-    "_comment": "Beschäftigungsstatus. Für ein Vermögensaufbau-Angebot zählt verfügbares/planbares Einkommen.",
-    "scores": {
-      "unternehmer": 1.0,
-      "selbststaendig": 0.9,
-      "selbstständig": 0.9,
-      "selbständig": 0.9,
-      "angestellt": 0.75,
-      "beamtin": 0.75,
-      "beamter": 0.75,
-      "in elternzeit": 0.5,
-      "elternzeit": 0.5,
-      "student": 0.4,
-      "studentin": 0.4,
-      "rentner": 0.4,
-      "rentnerin": 0.4,
-      "arbeitssuchend": 0.2,
-      "arbeitslos": 0.2
-    },
-    "default": 0.5
-  },
+  "tierCounts": { "A": 5, "B": 4 },
 
   "tiers": [
-    { "key": "A", "label": "A · Top", "min": 75, "color": "#16a34a" },
-    { "key": "B", "label": "B · Gut", "min": 55, "color": "#65a30d" },
-    { "key": "C", "label": "C · Mittel", "min": 35, "color": "#d97706" },
-    { "key": "D", "label": "D · Schwach", "min": 0, "color": "#dc2626" }
+    { "key": "A", "label": "A · qualifiziert", "color": "#16a34a" },
+    { "key": "B", "label": "B · qualifiziert", "color": "#65a30d" },
+    { "key": "C", "label": "C", "color": "#d97706" },
+    { "key": "D", "label": "D", "color": "#dc2626" }
   ]
 }

@@ -9,6 +9,7 @@ import TimeChart from './components/TimeChart.jsx';
 import CampaignCards from './components/CampaignCards.jsx';
 import DateRangePicker from './components/DateRangePicker.jsx';
 import SourcesView from './components/SourcesView.jsx';
+import QualityView from './components/QualityView.jsx';
 import ChatBot from './components/ChatBot.jsx';
 import { fmtEur, fmtInt } from './lib.js';
 
@@ -16,6 +17,7 @@ const NAV = [
   { key: 'dashboard', label: 'Dashboard', icon: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z' },
   { key: 'campaigns', label: 'Kampagnen', icon: 'M3 3v18h18M7 15l4-4 3 3 5-6' },
   { key: 'leads', label: 'Leadliste', icon: 'M3 5h18M3 12h18M3 19h18' },
+  { key: 'quality', label: 'Qualität', icon: 'M9 11l3 3L20 5M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
   { key: 'sources', label: 'Quellen', icon: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 0v10l7 3' },
 ];
 
@@ -61,6 +63,11 @@ export default function App() {
   // Projekt-Branding + Feature-Flags (aus der Server-Config über das Payload)
   const project = data?.project || null;
   const features = project?.features || { hasTickets: true, hasQuality: true };
+  // Umfrage-basierte Lead-Qualität (criteria-Modell) vorhanden? Dann bekommt sie
+  // einen eigenen Reiter und die alte, an Leads/Tickets gekoppelte Quali-UI wird
+  // ausgeblendet (uiFeatures.hasQuality = false).
+  const surveyQuality = Boolean(data?.quality);
+  const uiFeatures = surveyQuality ? { ...features, hasQuality: false } : features;
   const ticketLabel = project?.ticketLabel || { singular: 'VIP-Ticket', plural: 'VIP-Tickets' };
   const accent = project?.branding?.accent || '#d0bb5a';
   const logo = project?.branding?.logo || '/logo.svg';
@@ -190,7 +197,7 @@ export default function App() {
           </div>
         </div>
         <nav className="nav">
-          {NAV.map((n) => (
+          {NAV.filter((n) => n.key !== 'quality' || surveyQuality).map((n) => (
             <button key={n.key} className={`nav-item ${view === n.key ? 'active' : ''}`} onClick={() => setView(n.key)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={n.icon} /></svg>
               {n.label}
@@ -243,7 +250,7 @@ export default function App() {
 
         {data && (
           <>
-            <Filters leads={data.leads} filters={filters} setFilters={setFilters} tiers={tiers} features={features} onReset={() => setFilters({ ...EMPTY_FILTERS, from: range.from, to: range.to })} />
+            <Filters leads={data.leads} filters={filters} setFilters={setFilters} tiers={tiers} features={uiFeatures} onReset={() => setFilters({ ...EMPTY_FILTERS, from: range.from, to: range.to })} />
 
             {view === 'dashboard' && (
               <>
@@ -267,7 +274,7 @@ export default function App() {
                 </section>
 
                 {/* KPI-Boxen darunter */}
-                <Kpis kpis={kpis} dist={dist} tiers={tiers} features={features} accent={accent} ticketLabel={ticketLabel} termine={termineKpis} closings={closingsKpis} />
+                <Kpis kpis={kpis} dist={dist} tiers={tiers} features={uiFeatures} accent={accent} ticketLabel={ticketLabel} termine={termineKpis} closings={closingsKpis} />
 
                 <section className="panel">
                   <div className="panel-head"><div><h2>Bezahlt · Meta</h2><span className="panel-sub">Performance nach Kampagne, Anzeigengruppe, Creative und Placement</span></div></div>
@@ -294,7 +301,7 @@ export default function App() {
                   {!hasFb && (tab === 'creative' || tab === 'placement') && (
                     <div className="info-note">Adspend ist je Anzeigengruppe im Sheet hinterlegt – auf Creative-/Placement-Ebene über die Facebook-Anbindung.</div>
                   )}
-                  <BreakdownTable rows={paidRows} dimLabel={DIMENSIONS.find((d) => d.key === tab).label} onSelect={selectDim} tiers={tiers} features={features} ticketLabel={ticketLabel} />
+                  <BreakdownTable rows={paidRows} dimLabel={DIMENSIONS.find((d) => d.key === tab).label} onSelect={selectDim} tiers={tiers} features={uiFeatures} ticketLabel={ticketLabel} />
                 </section>
 
                 {organicRows.length > 0 && (
@@ -308,7 +315,7 @@ export default function App() {
                         </span>
                       </div>
                     )}
-                    <BreakdownTable rows={organicRows} dimLabel={orgDrill ? 'Unterquelle' : 'Quelle'} onSelect={orgDrill ? undefined : (k) => setOrgDrill(k)} tiers={tiers} features={features} ticketLabel={ticketLabel} showActiveToggle={false} />
+                    <BreakdownTable rows={organicRows} dimLabel={orgDrill ? 'Unterquelle' : 'Quelle'} onSelect={orgDrill ? undefined : (k) => setOrgDrill(k)} tiers={tiers} features={uiFeatures} ticketLabel={ticketLabel} showActiveToggle={false} />
                   </section>
                 )}
               </>
@@ -318,7 +325,7 @@ export default function App() {
               hasFb && fb.hierarchy ? (
                 <section className="panel">
                   <div className="panel-head"><div><h2>Kampagnen-Aufschlüsselung</h2><span className="panel-sub">Kampagne → Anzeigengruppe → Creative · Facebook-Kennzahlen + Lead-Attribution</span></div></div>
-                  <CampaignCards hierarchy={fb.hierarchy} dailyByEntity={fb.dailyByEntity} features={features} accent={accent} ticketLabel={ticketLabel} />
+                  <CampaignCards hierarchy={fb.hierarchy} dailyByEntity={fb.dailyByEntity} features={uiFeatures} accent={accent} ticketLabel={ticketLabel} />
                 </section>
               ) : (
                 <section className="panel">
@@ -331,8 +338,12 @@ export default function App() {
             {view === 'leads' && (
               <section className="panel">
                 <div className="panel-head"><div><h2>Alle Leads</h2><span className="panel-sub">Zeile anklicken für Details &amp; Fragebogen-Antworten</span></div></div>
-                <LeadsTable leads={filtered} tiers={tiers} features={features} ticketLabel={ticketLabel} />
+                <LeadsTable leads={filtered} tiers={tiers} features={uiFeatures} ticketLabel={ticketLabel} />
               </section>
+            )}
+
+            {view === 'quality' && surveyQuality && (
+              <QualityView quality={data.quality} range={range} accent={accent} />
             )}
 
             {view === 'sources' && <SourcesView leads={filtered} />}
@@ -340,7 +351,7 @@ export default function App() {
             <footer className="footer">
               {data.counts.leads} Leads · {data.counts.paidLeads} bezahlt
               {features.hasTickets && ` · ${data.counts.tickets} ${ticketLabel.plural}`}
-              {features.hasQuality && ` · ${data.counts.scored} bewertet`}
+              {uiFeatures.hasQuality && ` · ${data.counts.scored} bewertet`}
               {' · '}Quelle: {data.source === 'google' ? 'Google Sheet (live)' : 'Demo'}
             </footer>
           </>

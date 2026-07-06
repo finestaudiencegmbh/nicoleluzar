@@ -97,8 +97,21 @@ den in `scoring.json` verwendeten Dimensionen passen.
 
 ### 3. `scoring.json` (nur bei `hasQuality: true`)
 
-Gewichte, Einkommensstufen, Tiers etc. anpassen. Bei `hasQuality: false` wird die
-Datei ignoriert.
+Zwei Bewertungsmodelle (per `model`):
+
+- **`model: "criteria"`** – deterministisches KO-/Kriterien-Zählmodell (Dropdown-
+  Fragebögen). `ko` = Regeln, die sofort Tier D setzen; `aCriteria` = Kriterien,
+  die gezählt werden (`tierCounts.A`=alle → A, `tierCounts.B` → B, sonst C). Jede
+  Regel: `{ "field": "<answers-Schlüssel>", "equals": ["exakter Wert", …] }`,
+  Vergleich exakt nach Trim. `validFrom` (YYYY-MM-DD) bewertet nur Zeilen ab
+  Stichtag. Jede Fragebogen-Zeile ist die eigene Auswertungseinheit (eigenes
+  Datum + UTM Medium) und erscheint im Reiter **„Qualität"** (Verteilung,
+  Tagestrend, Ad-Breakdown je UTM Medium).
+- **ohne `model`** – gewichtetes 0..100-Modell (Freitext-Antworten, Gewichte je
+  Dimension + Tier-Schwellen); Qualität hängt an den Leads (Join über E-Mail).
+
+Die `answers`-Schlüssel müssen zu `project.config.json -> questionnaire.answers`
+passen. Bei `hasQuality: false` wird die Datei ignoriert.
 
 ### 4. `campaigns.json`
 
