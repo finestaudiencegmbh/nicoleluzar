@@ -20,7 +20,7 @@ const fmtScore = (n) => (n == null ? '–' : String(Math.round(n)));
 
 /** Kennzahlen in drei Sektionen – ohne horizontales Scrollen, alles umbruchfähig. */
 function Metrics({ n, leadHidden, features = {}, ticketLabel = {} }) {
-  const { hasTickets = true, hasQuality = true } = features;
+  const { hasTickets = true, hasQuality = true, hasQualityScore = true } = features;
   const tShort = ticketLabel.plural || 'Tickets';
   const lead = (v) => (leadHidden ? '–' : v);
   const groups = [
@@ -37,7 +37,7 @@ function Metrics({ n, leadHidden, features = {}, ticketLabel = {} }) {
     {
       title: hasQuality ? 'Qualität & Funnel' : 'Funnel', cls: 'g-quality',
       items: [
-        ...(hasQuality ? [['Quali-Rate', lead(fmtPct(n.qualifiedRate))], ['Ø Quali', lead(fmtScore(n.avgQuality))]] : []),
+        ...(hasQuality ? [['Quali-Rate', lead(fmtPct(n.qualifiedRate))], ...(hasQualityScore ? [['Ø Quali', lead(fmtScore(n.avgQuality))]] : [])] : []),
         ['CVR Start', lead(fmtPct(n.cvrStart))],
         ...(hasTickets ? [['CVR Ticket', lead(fmtPct(n.cvrTicket))]] : []),
       ],

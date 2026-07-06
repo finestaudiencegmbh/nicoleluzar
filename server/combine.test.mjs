@@ -32,7 +32,16 @@ const leads = [
   { sourceType: 'organic', campaign: '(organisch)', adset: 'x', creative: 'y', wonAt: '2026-05-28T09:00:00Z', hasTicket: false },
 ];
 
-const { hierarchy, daily, totals } = combineMetaWithLeads(meta, leads);
+// Bewertete Umfrage-Zeilen (criteria-Modell) – attribuiert über dasselbe UTM.
+// 4 Umfragen auf Static 19: A, B, C, D -> Quali-Rate (A+B)/gesamt = 2/4 = 0,5
+const surveys = [
+  { campaign: 'Kampagne A', adset: 'AG 1', creative: 'Static 19', tier: 'A' },
+  { campaign: 'Kampagne A', adset: 'AG 1', creative: 'Static 19', tier: 'B' },
+  { campaign: 'Kampagne A', adset: 'AG 1', creative: 'Static 19', tier: 'C' },
+  { campaign: 'Kampagne A', adset: 'AG 1', creative: 'Static 19', tier: 'D' },
+];
+
+const { hierarchy, daily, totals } = combineMetaWithLeads(meta, leads, surveys);
 
 assert.equal(hierarchy.length, 2, 'zwei Kampagnen');
 const c = hierarchy.find((x) => x.name === 'Kampagne A');
@@ -66,6 +75,12 @@ const adStatic = a.ads.find((x) => x.name === 'Static 19');
 assert.equal(adStatic.leads, 2, 'Ad Static 19 hat 2 Leads');
 assert.equal(adStatic.tickets, 1);
 assert.equal(adStatic.lpConversion, 2 / 150, 'Ad LP-Conversion');
+
+// Quali-Rate aus den Umfragen (criteria) – je Ebene über UTM attribuiert
+assert.equal(adStatic.qualifiedRate, 0.5, 'Ad Static 19: Quali-Rate 2/4');
+assert.equal(a.qualifiedRate, 0.5, 'Anzeigengruppe: Quali-Rate 2/4');
+assert.equal(c.qualifiedRate, 0.5, 'Kampagne: Quali-Rate 2/4');
+assert.equal(c.avgQuality, null, 'kein numerischer Ø-Score im criteria-Modell');
 
 // Tagesreihen
 assert.equal(daily.spend.length, 2, 'zwei Spend-Tage');

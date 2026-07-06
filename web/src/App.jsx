@@ -68,6 +68,9 @@ export default function App() {
   // ausgeblendet (uiFeatures.hasQuality = false).
   const surveyQuality = Boolean(data?.quality);
   const uiFeatures = surveyQuality ? { ...features, hasQuality: false } : features;
+  // Für die Kampagnen-Hierarchie: Quali-Rate (aus den Umfragen) einblenden,
+  // aber ohne die numerische "Ø Quali" (das criteria-Modell hat keinen Score).
+  const qualiFeatures = surveyQuality ? { ...features, hasQuality: true, hasQualityScore: false } : features;
   const ticketLabel = project?.ticketLabel || { singular: 'VIP-Ticket', plural: 'VIP-Tickets' };
   const accent = project?.branding?.accent || '#d0bb5a';
   const logo = project?.branding?.logo || '/logo.svg';
@@ -325,7 +328,7 @@ export default function App() {
               hasFb && fb.hierarchy ? (
                 <section className="panel">
                   <div className="panel-head"><div><h2>Kampagnen-Aufschlüsselung</h2><span className="panel-sub">Kampagne → Anzeigengruppe → Creative · Facebook-Kennzahlen + Lead-Attribution</span></div></div>
-                  <CampaignCards hierarchy={fb.hierarchy} dailyByEntity={fb.dailyByEntity} features={uiFeatures} accent={accent} ticketLabel={ticketLabel} />
+                  <CampaignCards hierarchy={fb.hierarchy} dailyByEntity={fb.dailyByEntity} features={qualiFeatures} accent={accent} ticketLabel={ticketLabel} />
                 </section>
               ) : (
                 <section className="panel">

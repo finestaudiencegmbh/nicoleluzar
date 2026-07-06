@@ -250,10 +250,12 @@ function parseTicketRow(o, project) {
     answers,
     // UTM Medium des Fragebogens (für die Ad-Aufschlüsselung der Lead-Qualität).
     utmMedium: norm(pickRaw(o, f.utmMedium)) || norm(o['utm_medium']),
+    // Volles UTM (Source=Anzeigengruppe, Medium=Creative, Campaign=Kampagne) –
+    // gleiche Struktur wie der Leads-Tab, für die Attribution in die Hierarchie.
     utm: {
-      source: norm(o['utm_source']),
+      source: norm(pickRaw(o, f.utmSource)) || norm(o['utm_source']),
       medium: norm(pickRaw(o, f.utmMedium)) || norm(o['utm_medium']),
-      campaign: norm(o['utm_campaign']),
+      campaign: norm(pickRaw(o, f.utmCampaign)) || norm(o['utm_campaign']),
       term: norm(o['utm_term']),
     },
   };

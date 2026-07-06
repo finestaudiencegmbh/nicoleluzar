@@ -102,7 +102,9 @@
       "lastName": [],
       "email": ["e-mail"],
       "phone": ["telefonnummer"],
-      "utmMedium": ["utm medium"]
+      "utmSource": ["utm source"],
+      "utmMedium": ["utm medium"],
+      "utmCampaign": ["utm campaign"]
     },
     "answers": {
       "alter": ["alter"],

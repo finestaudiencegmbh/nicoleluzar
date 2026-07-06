@@ -284,7 +284,19 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
       if (validFrom && day < validFrom) continue; // nur ab Stichtag bewerten
       const q = computeQuality(t.answers, cfg);
       if (!q) continue;
-      rows.push({ day, tier: q.tier, medium: collapse(t.utmMedium) || '(kein Medium)' });
+      // Attribution über das volle UTM des Fragebogens (wie bei den Leads) –
+      // ermöglicht die Quali-Aufschlüsselung je Kampagne/Anzeigengruppe/Creative.
+      const paid = isPaid(t.utm, paidAdsets, organicPatterns, paidPatterns);
+      const { campaign, adset, creative } = classifyUtm(t.utm, paid, organicLabel, unattribLabel);
+      rows.push({
+        day,
+        tier: q.tier,
+        medium: collapse(t.utmMedium) || '(kein Medium)',
+        sourceType: paid ? 'paid' : 'organic',
+        campaign,
+        adset,
+        creative,
+      });
     }
     qualitySummary = { validFrom, tiers: cfg.tiers || [], rows };
   }

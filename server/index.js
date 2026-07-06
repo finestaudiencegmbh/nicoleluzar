@@ -81,7 +81,14 @@ async function loadDataset({ refresh = false, from = '', to = '' } = {}) {
       const agg = aggregateFb(all.records);
       // Leads für denselben Zeitraum, damit FB-Hierarchie & Leads konsistent sind
       const leadsInRange = filterLeadsByRange(dataset.leads, from, to);
-      const combined = combineMetaWithLeads(all, leadsInRange);
+      // Bewertete Umfrage-Zeilen im selben Zeitraum -> Quali-Rate je Kampagne/
+      // Anzeigengruppe/Creative in der Hierarchie.
+      const surveysInRange = (dataset.quality?.rows || []).filter((r) => {
+        if (from && r.day < from) return false;
+        if (to && r.day > to) return false;
+        return true;
+      });
+      const combined = combineMetaWithLeads(all, leadsInRange, surveysInRange);
       fb = { configured: true, provider: 'meta', error: null, fetchedAt: new Date().toISOString(), ...agg, hierarchy: combined.hierarchy, daily: combined.daily, totals: combined.totals, nonLeadCampaigns: combined.nonLeadCampaigns, uocByDim: combined.uocByDim, dimMeta: combined.dimMeta, dailyByEntity: combined.dailyByEntity };
     } catch (err) {
       console.error('Meta-Fehler:', err.message);

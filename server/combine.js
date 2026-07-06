@@ -30,7 +30,7 @@ const normKey = (s) =>
     .toLowerCase();
 
 function emptyMetrics() {
-  return { spend: 0, impressions: 0, clicks: 0, uoc: 0, leads: 0, tickets: 0, scoreSum: 0, scored: 0, qualified: 0 };
+  return { spend: 0, impressions: 0, clicks: 0, uoc: 0, leads: 0, tickets: 0, scoreSum: 0, scored: 0, qualified: 0, qN: 0, qQualified: 0, qA: 0, qD: 0 };
 }
 
 /** Leitet die abgeleiteten Kennzahlen aus den Rohsummen ab. */
@@ -56,7 +56,10 @@ function derive(m) {
     cvrStart: lpConversion,
     cvrTicket: m.leads ? m.tickets / m.leads : null, // Lead -> Ticket
     avgQuality: m.scored ? Math.round(m.scoreSum / m.scored) : null,
-    qualifiedRate: m.tickets ? m.qualified / m.tickets : null,
+    // Quali-Rate: bevorzugt aus den bewerteten Umfragen (criteria-Modell,
+    // A+B ÷ bewertete Umfragen), sonst aus den Tickets (gewichtetes Modell).
+    qualifiedRate: m.qN ? m.qQualified / m.qN : (m.tickets ? m.qualified / m.tickets : null),
+    qualifiedSurveys: m.qN || 0,
   };
 }
 
@@ -80,7 +83,7 @@ function pathKey(dim, { campaign, adset, creative }) {
  * @param {object} meta   Ergebnis aus fetchMetaAll() (entities, daily, status)
  * @param {array}  leads  Lead-Records aus buildDataset (mit campaign/adset/creative, wonAt, hasTicket)
  */
-export function combineMetaWithLeads(meta, leads) {
+export function combineMetaWithLeads(meta, leads, surveys = []) {
   const { entities = [], daily = [], dailyEntities = [], campaignStatus = {}, adsetStatus = {}, adStatus = {} } = meta || {};
   const campCfg = loadCampaignConfig();
 
@@ -110,6 +113,24 @@ export function combineMetaWithLeads(meta, leads) {
     }
   }
   const lookupLeads = (dim, parts) => leadBy[dim].get(pathKey(dim, parts)) || { leads: 0, tickets: 0, scoreSum: 0, scored: 0, qualified: 0 };
+
+  // Lead-Qualität (criteria-Modell): bewertete Umfrage-Zeilen je Dimension
+  // zählen (Gesamt + qualifiziert A+B + A + D), attribuiert über dasselbe UTM.
+  const qualBy = { campaign: new Map(), adset: new Map(), creative: new Map() };
+  for (const s of surveys || []) {
+    for (const dim of ['campaign', 'adset', 'creative']) {
+      if (!normKey(leafName(dim, s))) continue;
+      const k = pathKey(dim, s);
+      if (!qualBy[dim].has(k)) qualBy[dim].set(k, { qN: 0, qQualified: 0, qA: 0, qD: 0 });
+      const e = qualBy[dim].get(k);
+      e.qN += 1;
+      if (s.tier === 'A' || s.tier === 'B') e.qQualified += 1;
+      if (s.tier === 'A') e.qA += 1;
+      if (s.tier === 'D') e.qD += 1;
+    }
+  }
+  const lookupQual = (dim, parts) => qualBy[dim].get(pathKey(dim, parts)) || { qN: 0, qQualified: 0, qA: 0, qD: 0 };
+  const applyQual = (m, s) => { m.qN = s.qN; m.qQualified = s.qQualified; m.qA = s.qA; m.qD = s.qD; };
 
   // Hierarchie aufbauen: Kampagne -> Anzeigengruppe -> Ad
   const campaigns = new Map();
@@ -147,6 +168,7 @@ export function combineMetaWithLeads(meta, leads) {
     // Ad-Ebene: FB-Kennzahlen direkt, Leads/Tickets/Qualität über den vollen
     // Pfad (Kampagne ▸ Anzeigengruppe ▸ Creative), nicht nur den Creative-Namen
     const adLeads = lookupLeads('creative', { campaign: e.campaign, adset: e.adset, creative: e.creative });
+    const adQual = lookupQual('creative', { campaign: e.campaign, adset: e.adset, creative: e.creative });
     const adM = {
       spend: e.spend,
       impressions: e.impressions,
@@ -157,6 +179,10 @@ export function combineMetaWithLeads(meta, leads) {
       scoreSum: adLeads.scoreSum,
       scored: adLeads.scored,
       qualified: adLeads.qualified,
+      qN: adQual.qN,
+      qQualified: adQual.qQualified,
+      qA: adQual.qA,
+      qD: adQual.qD,
     };
     const adActive = adStatus[e.creative]?.active ?? null;
     a.ads.push({ id: e.adId, name: e.creative, level: 'ad', active: adActive, ...derive(adM) });
@@ -183,9 +209,11 @@ export function combineMetaWithLeads(meta, leads) {
   const result = [];
   for (const c of campaigns.values()) {
     applyLeadStats(c._m, lookupLeads('campaign', { campaign: c.name }));
+    applyQual(c._m, lookupQual('campaign', { campaign: c.name }));
     const adsets = [];
     for (const a of c.adsets.values()) {
       applyLeadStats(a._m, lookupLeads('adset', { campaign: c.name, adset: a.name }));
+      applyQual(a._m, lookupQual('adset', { campaign: c.name, adset: a.name }));
       adsets.push({
         id: a.id, name: a.name, level: 'adset', active: a.active, status: a.status,
         ...derive(a._m),
