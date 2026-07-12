@@ -67,12 +67,24 @@ function isEmptyRow(row) {
 function parseDate(s) {
   const v = norm(s);
   if (!v) return null;
-  // Nur echte Datumsangaben akzeptieren (Format im Sheet:
-  // "2026-05-26 18:46:08 +0000"). Verhindert, dass Zähl-/Summenzeilen
-  // wie "161" fälschlich als Datum (Jahr 161) interpretiert werden.
-  if (!/^\d{4}-\d{2}-\d{2}/.test(v)) return null;
-  const d = new Date(v.replace(' +0000', 'Z').replace(' ', 'T'));
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  // 1) ISO-Format: "2026-05-26 18:46:08 +0000" / "2026-05-26".
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) {
+    const d = new Date(v.replace(' +0000', 'Z').replace(' ', 'T'));
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  // 2) Deutsches Format (Optin-Leads): "13.7.2026 01:08:37" / "13.07.2026".
+  //    Tag.Monat.Jahr, Zeit optional. Der 4-stellige Jahresteil verhindert,
+  //    dass Zähl-/Summenzeilen (z. B. "161") fälschlich als Datum gelten.
+  //    Wall-Clock wird als UTC interpretiert – konsistent zum +0000-ISO oben
+  //    (das Dashboard zeigt Zeiten in UTC 1:1 wie im Sheet).
+  const m = v.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m) {
+    const day = Number(m[1]), month = Number(m[2]), year = Number(m[3]);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    const d = new Date(Date.UTC(year, month - 1, day, Number(m[4] || 0), Number(m[5] || 0), Number(m[6] || 0)));
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  return null;
 }
 
 const normEmail = (s) => norm(s).toLowerCase();

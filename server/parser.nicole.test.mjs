@@ -9,7 +9,7 @@
  * Ausführen:  node server/parser.nicole.test.mjs
  */
 import assert from 'node:assert/strict';
-import { parseSheets } from './parser.js';
+import { parseSheets, _internal } from './parser.js';
 import { buildDataset } from './build.js';
 import { loadScoringConfig } from './scoring.js';
 import { loadProjectConfig } from './project.js';
@@ -71,6 +71,15 @@ const umfrageSheet = {
     ['2026-04-02 10:00:00 +0000', 'Test', 'Person', '0170', 'test@example.com'],
   ],
 };
+
+// Datumsformate: ISO (+0000) UND deutsches Optin-Format müssen beide greifen –
+// und Zähl-/Summenzeilen ("161") dürfen NICHT als Datum gelten.
+const pd = _internal.parseDate;
+assert.equal(pd('2026-07-13 00:04:39 +0000'), '2026-07-13T00:04:39.000Z', 'ISO +0000');
+assert.equal(pd('13.7.2026 01:08:37'), '2026-07-13T01:08:37.000Z', 'deutsches Format mit Uhrzeit');
+assert.equal(pd('13.07.2026'), '2026-07-13T00:00:00.000Z', 'deutsches Format nur Datum');
+assert.equal(pd('161'), null, 'Summenzeile ist kein Datum');
+assert.equal(pd('47'), null, 'Zählzeile ist kein Datum');
 
 const parsed = parseSheets([overviewSheet, leadsSheet, termineSheet, closingsSheet, umfrageSheet], project);
 
