@@ -20,7 +20,7 @@ const fmtScore = (n) => (n == null ? '–' : String(Math.round(n)));
 
 /** Kennzahlen in drei Sektionen – ohne horizontales Scrollen, alles umbruchfähig. */
 function Metrics({ n, leadHidden, features = {}, ticketLabel = {} }) {
-  const { hasTickets = true, hasQuality = true, hasQualityScore = true } = features;
+  const { hasTickets = true, hasQuality = true, hasQualityScore = true, hasTermine = false, hasClosings = false } = features;
   const tShort = ticketLabel.plural || 'Tickets';
   const lead = (v) => (leadHidden ? '–' : v);
   const groups = [
@@ -32,6 +32,8 @@ function Metrics({ n, leadHidden, features = {}, ticketLabel = {} }) {
         ...(hasTickets ? [[tShort, lead(fmtInt(n.tickets))]] : []),
         ['€/Lead', lead(fmtEur(n.cpl))],
         ...(hasTickets ? [['€/Ticket', lead(fmtEur(n.cpt))]] : []),
+        ...(hasTermine ? [['€/Termin', lead(fmtEur(n.cptermin))]] : []),
+        ...(hasClosings ? [['€/Close', lead(fmtEur(n.cpclose))]] : []),
       ],
     },
     {

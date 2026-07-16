@@ -46,7 +46,9 @@ const termineSheet = {
   values: [
     ['Datum', 'Name', 'E-Mail', 'Telefon', 'UTM Source', 'UTM Medium', 'UTM  Campaign', 'Datum Gespräch', 'Termine', 'Termine aus Ads', 'Zielgruppe?', 'Feedback', 'UTM Source', 'UTM Medium', 'UTM  Campaign'],
     ['', '', '', '', 'Lead', '', '', '', '0', '0', '', '', 'Termine', '', ''], // Summenzeile -> ignorieren
-    ['2026-04-16 19:02:18', 'Jessica Semelka', 'jessica.semelka@gmail.com', '', 'Kampagne 1  - DACH - Broad Reiten', 'Ich suche Pferdemenschen 2.0', 'HW-Show - ABO', '2026-04-18 12:30:00 +0000', '', '', '', '', '', '', ''],
+    // Erster UTM-Satz = Buchungsquelle (calendly), zweiter "Lead"-Satz = echte
+    // Ad-Attribution. Mit utmFrom:"lead" muss der zweite (rechte) Satz gewinnen.
+    ['2026-04-16 19:02:18', 'Jessica Semelka', 'jessica.semelka@gmail.com', '', 'show-calendly', 'live', 'show-calendly', '2026-04-18 12:30:00 +0000', '', '', '', '', 'Kampagne 1  - DACH - Broad Reiten', 'Ich suche Pferdemenschen 2.0', 'HW-Show - ABO'],
     ['2026-04-16 19:43:48', 'Petra Seher', 'petra.seher@gmx.at', '', 'show-calendly', 'live', 'show-calendly', '2026-04-17 20:00:00 +0000', '', '', '', '', '', '', ''],
   ],
 };
@@ -104,6 +106,10 @@ assert.equal(jessica.quality, null, 'Leads tragen im criteria-Modus keinen Per-L
 
 // Funnel: Termine + Closings
 assert.equal(ds.counts.termine, 2, 'zwei Termine');
+const tJessica = ds.termine.find((t) => t.email === 'jessica.semelka@gmail.com');
+assert.equal(tJessica.sourceType, 'paid', 'Termin-Quelle aus dem rechten Lead-UTM-Block (nicht calendly)');
+assert.equal(tJessica.adset, 'Kampagne 1 - DACH - Broad Reiten', 'Anzeigengruppe aus dem Lead-UTM Source');
+assert.equal(ds.counts.paidTermine, 1, 'ein Termin über Ads (Petra = organisch via calendly)');
 assert.equal(ds.counts.closings, 2, 'zwei Verkäufe (Summenzeile ignoriert)');
 assert.equal(ds.counts.paidClosings, 1, 'ein Verkauf über Ads, einer organisch');
 const diana = ds.closings.find((c) => c.email === 'diana@gmx.de');

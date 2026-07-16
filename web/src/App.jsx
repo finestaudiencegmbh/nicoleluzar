@@ -70,7 +70,11 @@ export default function App() {
   const uiFeatures = surveyQuality ? { ...features, hasQuality: false } : features;
   // Für die Kampagnen-Hierarchie: Quali-Rate (aus den Umfragen) einblenden,
   // aber ohne die numerische "Ø Quali" (das criteria-Modell hat keinen Score).
-  const qualiFeatures = surveyQuality ? { ...features, hasQuality: true, hasQualityScore: false } : features;
+  // Plus €/Termin, €/Close, sobald es Termine/Closings gibt.
+  const funnelFlags = { hasTermine: (data?.counts?.termine || 0) > 0, hasClosings: (data?.counts?.closings || 0) > 0 };
+  const qualiFeatures = surveyQuality
+    ? { ...features, hasQuality: true, hasQualityScore: false, ...funnelFlags }
+    : { ...features, ...funnelFlags };
   const ticketLabel = project?.ticketLabel || { singular: 'VIP-Ticket', plural: 'VIP-Tickets' };
   const accent = project?.branding?.accent || '#d0bb5a';
   const logo = project?.branding?.logo || '/logo.svg';

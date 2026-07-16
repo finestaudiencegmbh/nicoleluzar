@@ -41,7 +41,17 @@ const surveys = [
   { campaign: 'Kampagne A', adset: 'AG 1', creative: 'Static 19', tier: 'D' },
 ];
 
-const { hierarchy, daily, totals } = combineMetaWithLeads(meta, leads, surveys);
+// Termine/Closings (paid) – für €/Termin und €/Close je Ebene
+const termine = [
+  { sourceType: 'paid', campaign: 'Kampagne A', adset: 'AG 1', creative: 'Static 19' },
+  { sourceType: 'paid', campaign: 'Kampagne A', adset: 'AG 1', creative: 'Static 19' },
+  { sourceType: 'paid', campaign: 'Kampagne A', adset: 'AG 1', creative: 'Reel 3' },
+];
+const closings = [
+  { sourceType: 'paid', campaign: 'Kampagne A', adset: 'AG 1', creative: 'Static 19' },
+];
+
+const { hierarchy, daily, totals } = combineMetaWithLeads(meta, leads, surveys, termine, closings);
 
 assert.equal(hierarchy.length, 2, 'zwei Kampagnen');
 const c = hierarchy.find((x) => x.name === 'Kampagne A');
@@ -81,6 +91,14 @@ assert.equal(adStatic.qualifiedRate, 0.5, 'Ad Static 19: Quali-Rate 2/4');
 assert.equal(a.qualifiedRate, 0.5, 'Anzeigengruppe: Quali-Rate 2/4');
 assert.equal(c.qualifiedRate, 0.5, 'Kampagne: Quali-Rate 2/4');
 assert.equal(c.avgQuality, null, 'kein numerischer Ø-Score im criteria-Modell');
+
+// €/Termin und €/Close je Ebene (Spend ÷ Termine bzw. Closings)
+assert.equal(c.termineCount, 3, 'Kampagne: 3 Termine attribuiert');
+assert.equal(c.cptermin, round2(150 / 3), '€/Termin = Spend ÷ Termine (150/3)');
+assert.equal(c.closingsCount, 1, 'Kampagne: 1 Close');
+assert.equal(c.cpclose, round2(150 / 1), '€/Close = Spend ÷ Closings (150/1)');
+assert.equal(adStatic.termineCount, 2, 'Ad Static 19: 2 Termine');
+assert.equal(adStatic.cptermin, round2(100 / 2), 'Ad €/Termin (100/2)');
 
 // Tagesreihen
 assert.equal(daily.spend.length, 2, 'zwei Spend-Tage');

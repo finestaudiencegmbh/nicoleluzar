@@ -52,7 +52,9 @@
       }
     },
     "termine": {
+      "_comment": "utmFrom: 'lead' -> die UTM-Quelle der Termine kommt aus dem rechten 'Lead'-Spaltensatz (echte Ad-Attribution), nicht aus der Buchungsquelle (calendly) links.",
       "detect": { "all": ["datum gespräch"], "any": [] },
+      "utmFrom": "lead",
       "fields": {
         "at": ["datum"],
         "name": ["name"],

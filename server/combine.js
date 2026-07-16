@@ -30,7 +30,7 @@ const normKey = (s) =>
     .toLowerCase();
 
 function emptyMetrics() {
-  return { spend: 0, impressions: 0, clicks: 0, uoc: 0, leads: 0, tickets: 0, scoreSum: 0, scored: 0, qualified: 0, qN: 0, qQualified: 0, qA: 0, qD: 0 };
+  return { spend: 0, impressions: 0, clicks: 0, uoc: 0, leads: 0, tickets: 0, scoreSum: 0, scored: 0, qualified: 0, qN: 0, qQualified: 0, qA: 0, qD: 0, termine: 0, closings: 0 };
 }
 
 /** Leitet die abgeleiteten Kennzahlen aus den Rohsummen ab. */
@@ -60,6 +60,10 @@ function derive(m) {
     // A+B ÷ bewertete Umfragen), sonst aus den Tickets (gewichtetes Modell).
     qualifiedRate: m.qN ? m.qQualified / m.qN : (m.tickets ? m.qualified / m.tickets : null),
     qualifiedSurveys: m.qN || 0,
+    termineCount: m.termine || 0,
+    closingsCount: m.closings || 0,
+    cptermin: m.termine ? round2(m.spend / m.termine) : null, // €/Termin
+    cpclose: m.closings ? round2(m.spend / m.closings) : null, // €/Close
   };
 }
 
@@ -83,7 +87,7 @@ function pathKey(dim, { campaign, adset, creative }) {
  * @param {object} meta   Ergebnis aus fetchMetaAll() (entities, daily, status)
  * @param {array}  leads  Lead-Records aus buildDataset (mit campaign/adset/creative, wonAt, hasTicket)
  */
-export function combineMetaWithLeads(meta, leads, surveys = []) {
+export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], closings = []) {
   const { entities = [], daily = [], dailyEntities = [], campaignStatus = {}, adsetStatus = {}, adStatus = {} } = meta || {};
   const campCfg = loadCampaignConfig();
 
@@ -132,6 +136,25 @@ export function combineMetaWithLeads(meta, leads, surveys = []) {
   const lookupQual = (dim, parts) => qualBy[dim].get(pathKey(dim, parts)) || { qN: 0, qQualified: 0, qA: 0, qD: 0 };
   const applyQual = (m, s) => { m.qN = s.qN; m.qQualified = s.qQualified; m.qA = s.qA; m.qD = s.qD; };
 
+  // Termine/Closings je Ebene zählen (für €/Termin, €/Close) – gleiche UTM-
+  // Attribution wie Leads. Organische (Label = "(organisch)") matchen keine
+  // Meta-Entität und fließen daher nicht in die Hierarchie ein.
+  const countBy = (items) => {
+    const by = { campaign: new Map(), adset: new Map(), creative: new Map() };
+    for (const it of items || []) {
+      for (const dim of ['campaign', 'adset', 'creative']) {
+        if (!normKey(leafName(dim, it))) continue;
+        const k = pathKey(dim, it);
+        by[dim].set(k, (by[dim].get(k) || 0) + 1);
+      }
+    }
+    return by;
+  };
+  const termBy = countBy(termine);
+  const closeBy = countBy(closings);
+  const lookupCount = (by, dim, parts) => by[dim].get(pathKey(dim, parts)) || 0;
+  const applyCounts = (m, dim, parts) => { m.termine = lookupCount(termBy, dim, parts); m.closings = lookupCount(closeBy, dim, parts); };
+
   // Hierarchie aufbauen: Kampagne -> Anzeigengruppe -> Ad
   const campaigns = new Map();
   for (const e of entities) {
@@ -169,6 +192,7 @@ export function combineMetaWithLeads(meta, leads, surveys = []) {
     // Pfad (Kampagne ▸ Anzeigengruppe ▸ Creative), nicht nur den Creative-Namen
     const adLeads = lookupLeads('creative', { campaign: e.campaign, adset: e.adset, creative: e.creative });
     const adQual = lookupQual('creative', { campaign: e.campaign, adset: e.adset, creative: e.creative });
+    const adPath = { campaign: e.campaign, adset: e.adset, creative: e.creative };
     const adM = {
       spend: e.spend,
       impressions: e.impressions,
@@ -183,6 +207,8 @@ export function combineMetaWithLeads(meta, leads, surveys = []) {
       qQualified: adQual.qQualified,
       qA: adQual.qA,
       qD: adQual.qD,
+      termine: lookupCount(termBy, 'creative', adPath),
+      closings: lookupCount(closeBy, 'creative', adPath),
     };
     const adActive = adStatus[e.creative]?.active ?? null;
     a.ads.push({ id: e.adId, name: e.creative, level: 'ad', active: adActive, ...derive(adM) });
@@ -210,10 +236,12 @@ export function combineMetaWithLeads(meta, leads, surveys = []) {
   for (const c of campaigns.values()) {
     applyLeadStats(c._m, lookupLeads('campaign', { campaign: c.name }));
     applyQual(c._m, lookupQual('campaign', { campaign: c.name }));
+    applyCounts(c._m, 'campaign', { campaign: c.name });
     const adsets = [];
     for (const a of c.adsets.values()) {
       applyLeadStats(a._m, lookupLeads('adset', { campaign: c.name, adset: a.name }));
       applyQual(a._m, lookupQual('adset', { campaign: c.name, adset: a.name }));
+      applyCounts(a._m, 'adset', { campaign: c.name, adset: a.name });
       adsets.push({
         id: a.id, name: a.name, level: 'adset', active: a.active, status: a.status,
         ...derive(a._m),

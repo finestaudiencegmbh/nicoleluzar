@@ -48,16 +48,31 @@ function classifyHeader(cells, project) {
 
 function rowToObj(headerCells, row) {
   const obj = {};
+  const last = {};
   headerCells.forEach((h, i) => {
     const k = key(h);
     if (!k) return;
     const v = norm(row[i]);
-    // Bei doppelten Spaltennamen (z. B. zweimal "UTM Source" im Termine-Tab:
-    // erst die Ad-Quelle, später die Buchungs-/Geschenk-Quelle) gewinnt die
-    // ERSTE nicht-leere Angabe – das ist die für die Attribution relevante.
+    // Bei doppelten Spaltennamen (z. B. zweimal "UTM Source" im Termine-Tab)
+    // gewinnt standardmäßig die ERSTE nicht-leere Angabe.
     if (!(k in obj) || (obj[k] === '' && v !== '')) obj[k] = v;
+    // Zusätzlich die LETZTE nicht-leere Angabe je Spalte merken – für Tabs mit
+    // zwei UTM-Sätzen, bei denen der rechte "Lead"-Block die Ad-Attribution
+    // trägt (Termine: links Buchungsquelle, rechts Lead-UTM). Siehe utmFrom.
+    if (v !== '') last[k] = v;
   });
+  Object.defineProperty(obj, '__last', { value: last, enumerable: false });
   return obj;
+}
+
+/** Wie pickRaw, aber nimmt die LETZTE nicht-leere Angabe je Spalte. */
+function pickRawLast(o, keys) {
+  const last = o.__last || {};
+  for (const k of keys || []) {
+    const v = last[k];
+    if (v != null && norm(v) !== '') return v;
+  }
+  return '';
 }
 
 function isEmptyRow(row) {
@@ -177,11 +192,14 @@ function parseLeadRow(o, fields) {
   };
 }
 
-function parseTermineRow(o, fields) {
+function parseTermineRow(o, fields, preferLastUtm = false) {
   const appointmentAt = parseDate(pickRaw(o, fields.appointmentAt));
   const at = parseDate(pickRaw(o, fields.at));
   // Nur echte Termine (mit vereinbartem Gesprächs-Datum) – Summen-/Testzeilen raus.
   if (!appointmentAt) return null;
+  // UTM-Quelle: bei zwei Sätzen im Tab optional den rechten "Lead"-Block nehmen
+  // (echte Ad-Attribution) statt der Buchungsquelle links (utmFrom: "lead").
+  const pickUtm = (keys) => (preferLastUtm ? pickRawLast(o, keys) : pickRaw(o, keys));
   return {
     wonAt: at || appointmentAt,
     appointmentAt,
@@ -189,9 +207,9 @@ function parseTermineRow(o, fields) {
     email: normEmail(pickRaw(o, fields.email)),
     phone: norm(pickRaw(o, fields.phone)),
     utm: {
-      source: norm(pickRaw(o, fields.utmSource)),
-      medium: norm(pickRaw(o, fields.utmMedium)),
-      campaign: norm(pickRaw(o, fields.utmCampaign)),
+      source: norm(pickUtm(fields.utmSource)),
+      medium: norm(pickUtm(fields.utmMedium)),
+      campaign: norm(pickUtm(fields.utmCampaign)),
       term: '',
     },
   };
@@ -290,6 +308,8 @@ export function parseSheets(sheets, project = DEFAULT_PROJECT) {
   const leadFields = project.sheet?.leads?.fields || DEFAULT_PROJECT.sheet.leads.fields;
   const termineFields = project.sheet?.termine?.fields || DEFAULT_PROJECT.sheet.termine.fields;
   const closingFields = project.sheet?.closings?.fields || DEFAULT_PROJECT.sheet.closings.fields;
+  // utmFrom: "lead"/"last" -> UTM aus dem rechten "Lead"-Block ziehen (Termine).
+  const terminePreferLast = ['lead', 'last'].includes(String(project.sheet?.termine?.utmFrom || '').toLowerCase());
 
   for (const sheet of sheets) {
     const rows = sheet.values || [];
@@ -300,7 +320,7 @@ export function parseSheets(sheets, project = DEFAULT_PROJECT) {
           const r = parseOverviewRow(o, overviewFields);
           if (r) overview.push(r);
         } else if (table.type === 'termine') {
-          const r = parseTermineRow(o, termineFields);
+          const r = parseTermineRow(o, termineFields, terminePreferLast);
           if (r) termine.push(r);
         } else if (table.type === 'closings') {
           const r = parseClosingRow(o, closingFields);

@@ -88,7 +88,14 @@ async function loadDataset({ refresh = false, from = '', to = '' } = {}) {
         if (to && r.day > to) return false;
         return true;
       });
-      const combined = combineMetaWithLeads(all, leadsInRange, surveysInRange);
+      // Termine/Closings im selben Zeitraum -> €/Termin, €/Close je Ebene.
+      const byRange = (arr) => (arr || []).filter((r) => {
+        const day = (r.wonAt || '').slice(0, 10);
+        if (from && day < from) return false;
+        if (to && day > to) return false;
+        return true;
+      });
+      const combined = combineMetaWithLeads(all, leadsInRange, surveysInRange, byRange(dataset.termine), byRange(dataset.closings));
       fb = { configured: true, provider: 'meta', error: null, fetchedAt: new Date().toISOString(), ...agg, hierarchy: combined.hierarchy, daily: combined.daily, totals: combined.totals, nonLeadCampaigns: combined.nonLeadCampaigns, uocByDim: combined.uocByDim, dimMeta: combined.dimMeta, dailyByEntity: combined.dailyByEntity };
     } catch (err) {
       console.error('Meta-Fehler:', err.message);
