@@ -21,28 +21,30 @@ const key = (s) =>
     .trim();
 
 /**
- * Prüft eine normalisierte Spalten-Menge gegen eine detect-Definition
- * { all: [...], any: [...] }: alle 'all'-Spalten müssen vorhanden sein UND –
- * falls 'any' gesetzt ist – mindestens eine davon.
+ * Prüft eine Spalten-Kopfzeile gegen eine detect-Definition { all, any }.
+ * Schlüssel mit führendem "~" matchen per Teilstring (robust gegen lange/
+ * leicht abweichende Fragetexte), sonst exakt.
  */
-function matchDetect(set, detect) {
+function matchDetect(keys, detect) {
   if (!detect) return false;
+  const set = new Set(keys);
+  const has = (k) => (typeof k === 'string' && k.startsWith('~') ? keys.some((x) => x.includes(k.slice(1))) : set.has(k));
   const all = detect.all || [];
   const any = detect.any || [];
   if (all.length === 0 && any.length === 0) return false;
-  const hasAll = all.every((k) => set.has(k));
-  const hasAny = any.length ? any.some((k) => set.has(k)) : true;
+  const hasAll = all.every(has);
+  const hasAny = any.length ? any.some(has) : true;
   return hasAll && hasAny;
 }
 
 /** Erkennt anhand einer Kopfzeile, um welchen Tabellentyp es sich handelt. */
 function classifyHeader(cells, project) {
-  const set = new Set(cells.map(key));
-  if (matchDetect(set, project?.sheet?.overview?.detect)) return 'overview';
-  if (matchDetect(set, project?.questionnaire?.detect)) return 'tickets';
-  if (matchDetect(set, project?.sheet?.termine?.detect)) return 'termine';
-  if (matchDetect(set, project?.sheet?.closings?.detect)) return 'closings';
-  if (matchDetect(set, project?.sheet?.leads?.detect)) return 'leads';
+  const keys = cells.map(key);
+  if (matchDetect(keys, project?.sheet?.overview?.detect)) return 'overview';
+  if (matchDetect(keys, project?.questionnaire?.detect)) return 'tickets';
+  if (matchDetect(keys, project?.sheet?.termine?.detect)) return 'termine';
+  if (matchDetect(keys, project?.sheet?.closings?.detect)) return 'closings';
+  if (matchDetect(keys, project?.sheet?.leads?.detect)) return 'leads';
   return null;
 }
 
@@ -165,9 +167,17 @@ function parseOverviewRow(o, fields) {
   };
 }
 
-/** Erster nicht-leerer Roh-Wert aus einer Liste möglicher Spalten-Schlüssel. */
+/** Erster nicht-leerer Roh-Wert aus einer Liste möglicher Spalten-Schlüssel.
+ *  Schlüssel mit führendem "~" matchen per Teilstring (lange Fragetexte). */
 function pickRaw(o, keys) {
   for (const k of keys || []) {
+    if (typeof k === 'string' && k.startsWith('~')) {
+      const needle = k.slice(1);
+      for (const ok of Object.keys(o)) {
+        if (ok.includes(needle)) { const v = o[ok]; if (v != null && norm(v) !== '') return v; }
+      }
+      continue;
+    }
     const v = o[k];
     if (v != null && norm(v) !== '') return v;
   }

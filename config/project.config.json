@@ -92,10 +92,10 @@
     }
   },
 
-  "_comment_questionnaire": "Mapping des 'Umfrage NEU'-Tabs (Lead-Qualitäts-Scoring, hasQuality=true). Erkannt über die Spaltenüberschriften (detect). Die answers-Schlüssel (alter, berufsstand, anzahlPferde, pferdeProbleme, invest) entsprechen den in scoring.json (model: 'criteria') verwendeten Feldern. utmMedium dient der Ad-Aufschlüsselung. Bewertet werden nur Zeilen ab scoring.json -> validFrom.",
+  "_comment_questionnaire": "Mapping des 'Umfrage 3007'-Tabs (Lead-Qualitäts-Scoring, hasQuality=true). Erkannt über die Spaltenüberschriften (detect). Antwort-Spalten mit langen Fragetexten werden per Teilstring gematcht (führendes '~'). Die answers-Schlüssel (alter, berufsstand, gesundheit, laengeSuche, wasTrifftZu, bereit) entsprechen den in scoring.json (model: 'criteria') verwendeten Feldern. Bewertet werden nur Zeilen ab scoring.json -> validFrom.",
   "questionnaire": {
     "detect": {
-      "all": ["alter", "berufsstand", "anzahl pferde"],
+      "all": ["alter", "berufsstand", "~bist du bereit"],
       "any": []
     },
     "fields": {
@@ -111,9 +111,11 @@
     "answers": {
       "alter": ["alter"],
       "berufsstand": ["berufsstand"],
-      "anzahlPferde": ["anzahl pferde"],
-      "pferdeProbleme": ["pferde mit problemen"],
-      "invest": ["geld in lösung investiert"]
+      "gesundheit": ["~gesundheitliches oder wiederkehrendes"],
+      "laengeSuche": ["~wie lange suchst du"],
+      "wasVeraendern": ["~was würdest du am liebsten"],
+      "wasTrifftZu": ["~was trifft am ehesten"],
+      "bereit": ["~bist du bereit"]
     },
     "leadTicketColumn": []
   }
