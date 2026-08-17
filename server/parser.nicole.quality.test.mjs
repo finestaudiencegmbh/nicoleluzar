@@ -76,6 +76,7 @@ assert.equal(tierOf('ad-D3'), 'D', 'KO Gesundheit "Nein" -> D');
 const a = { alter: '40 - 59 Jahre', berufsstand: 'Angestellte', gesundheit: 'Ja', laengeSuche: '3–12 Monate', wasTrifftZu: 'Ich möchte endlich verstehen, warum mein Pferd dieses Problem hat.', bereit: 'Ja, ich bin bereit.' };
 assert.equal(computeQuality(a, scoring).tier, 'A', '6/6 direkt');
 assert.equal(computeQuality({ ...a, gesundheit: 'Teilweise' }, scoring).tier, 'B', '"Teilweise" zählt nicht (5/6) und ist kein KO');
+assert.equal(computeQuality({ ...a, bereit: 'Das ist mir extrem wichtig.' }, scoring).tier, 'A', 'Wichtigkeits-Top-Box zählt auch als Bereitschaft (6/6)');
 assert.equal(computeQuality({ alter: '', berufsstand: '', gesundheit: '', laengeSuche: '', wasTrifftZu: '', bereit: '' }, scoring).tier, 'C', 'leer = C (kein KO)');
 
 console.log('✓ Alle Nicole-Qualitäts-Tests (Umfrage 3007) bestanden');

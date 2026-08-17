@@ -16,8 +16,9 @@
     { "field": "gesundheit", "equals": ["Ja"] },
     { "field": "laengeSuche", "equals": ["3–12 Monate", "1–3 Jahre", "Mehr als 3 Jahre"] },
     { "field": "wasTrifftZu", "equals": ["Ich suche vor allem eine Behandlung, die endlich wirkt.", "Ich möchte endlich verstehen, warum mein Pferd dieses Problem hat."] },
-    { "field": "bereit", "equals": ["Ja, ich bin bereit."] }
+    { "field": "bereit", "equals": ["Ja, ich bin bereit.", "Das ist mir extrem wichtig."] }
   ],
+  "_comment_bereit": "Frage 'Bist du bereit...' hat im Sheet zwei Antwortskalen (Bereitschaft + Wichtigkeit) – als A-Antwort zählen die Top-Box-Antworten beider: 'Ja, ich bin bereit.' und 'Das ist mir extrem wichtig.'.",
 
   "tierCounts": { "A": 6, "B": 5 },
 
