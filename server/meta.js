@@ -197,17 +197,31 @@ async function fetchDailyEntities(c, range) {
   }));
 }
 
+// Ohne effective_status-Filter liefert die Graph API ARCHIVIERTE Entitäten NICHT
+// mit. Solche (im Zeitraum gelaufenen) Ads hätten dann einen unbekannten Status
+// und würden im "Nur aktive"-Modus fälschlich angezeigt. Darum alle Status
+// explizit anfordern.
+const STATUS_ALL = {
+  campaigns: ['ACTIVE', 'PAUSED', 'DELETED', 'ARCHIVED', 'IN_PROCESS', 'WITH_ISSUES'],
+  adsets: ['ACTIVE', 'PAUSED', 'DELETED', 'ARCHIVED', 'CAMPAIGN_PAUSED', 'IN_PROCESS', 'WITH_ISSUES'],
+  ads: ['ACTIVE', 'PAUSED', 'DELETED', 'ARCHIVED', 'ADSET_PAUSED', 'CAMPAIGN_PAUSED', 'DISAPPROVED', 'PENDING_REVIEW', 'PREAPPROVED', 'PENDING_BILLING_INFO', 'IN_PROCESS', 'WITH_ISSUES'],
+};
+
 /** effective_status je Kampagne (+objective), Anzeigengruppe und Werbeanzeige. */
 async function fetchStatus(c) {
-  const camps = await graphGet(
-    `${GRAPH}/${c.version}/${c.account}/campaigns?fields=name,effective_status,objective&limit=500&access_token=${c.token}`
-  );
-  const adsets = await graphGet(
-    `${GRAPH}/${c.version}/${c.account}/adsets?fields=name,effective_status,campaign_id&limit=500&access_token=${c.token}`
-  );
-  const ads = await graphGet(
-    `${GRAPH}/${c.version}/${c.account}/ads?fields=name,effective_status&limit=500&access_token=${c.token}`
-  );
+  // Mit Status-Filter (inkl. archiviert). Schlägt der Filter fehl, ohne Filter
+  // erneut versuchen – damit ein Problem nie den kompletten Status verwirft.
+  const getAll = async (edge, fields) => {
+    const base = `${GRAPH}/${c.version}/${c.account}/${edge}?fields=${fields}&limit=500&access_token=${c.token}`;
+    try {
+      return await graphGet(`${base}&effective_status=${encodeURIComponent(JSON.stringify(STATUS_ALL[edge]))}`);
+    } catch {
+      try { return await graphGet(base); } catch { return []; }
+    }
+  };
+  const camps = await getAll('campaigns', 'name,effective_status,objective');
+  const adsets = await getAll('adsets', 'name,effective_status,campaign_id');
+  const ads = await getAll('ads', 'name,effective_status');
   const isActive = (s) => s === 'ACTIVE';
   const campaignStatus = {};
   for (const x of camps) {
@@ -234,7 +248,7 @@ export async function fetchMetaAll(customRange) {
     fetchEntities(c, range),
     fetchDaily(c, range),
     fetchDailyEntities(c, range).catch(() => []),
-    fetchStatus(c).catch(() => ({ campaignStatus: {}, adsetStatus: {} })),
+    fetchStatus(c).catch(() => ({ campaignStatus: {}, adsetStatus: {}, adStatus: {} })),
   ]);
   return { records, entities, daily, dailyEntities, ...status, range };
 }
