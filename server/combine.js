@@ -88,7 +88,7 @@ function pathKey(dim, { campaign, adset, creative }) {
  * @param {array}  leads  Lead-Records aus buildDataset (mit campaign/adset/creative, wonAt, hasTicket)
  */
 export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], closings = []) {
-  const { entities = [], daily = [], dailyEntities = [], campaignStatus = {}, adsetStatus = {}, adStatus = {} } = meta || {};
+  const { entities = [], daily = [], dailyEntities = [], campaignStatus = {}, adsetStatus = {}, adStatus = {}, adStatusById = {}, adsetStatusById = {} } = meta || {};
   const campCfg = loadCampaignConfig();
 
   // Lead-/Ticket-/Qualitäts-Zähler je Dimension. WICHTIG: HIERARCHISCH
@@ -180,8 +180,8 @@ export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], cl
         id: e.adsetId,
         name: e.adset,
         level: 'adset',
-        active: adsetStatus[e.adset]?.active ?? null,
-        status: adsetStatus[e.adset]?.status ?? null,
+        active: adsetStatusById[e.adsetId]?.active ?? adsetStatus[e.adset]?.active ?? null,
+        status: adsetStatusById[e.adsetId]?.status ?? adsetStatus[e.adset]?.status ?? null,
         _m: emptyMetrics(),
         ads: [],
       });
@@ -210,7 +210,7 @@ export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], cl
       termine: lookupCount(termBy, 'creative', adPath),
       closings: lookupCount(closeBy, 'creative', adPath),
     };
-    const adActive = adStatus[e.creative]?.active ?? null;
+    const adActive = adStatusById[e.adId]?.active ?? adStatus[e.creative]?.active ?? null;
     a.ads.push({ id: e.adId, name: e.creative, level: 'ad', active: adActive, ...derive(adM) });
 
     // FB-Summen nach oben aggregieren
@@ -317,8 +317,8 @@ export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], cl
   };
   for (const e of entities) {
     const cActive = campaignStatus[e.campaign]?.active ?? null;
-    const aActive = adsetStatus[e.adset]?.active ?? null;
-    const adActive = adStatus[e.creative]?.active ?? aActive; // echter Ad-Status, sonst von Anzeigengruppe
+    const aActive = adsetStatusById[e.adsetId]?.active ?? adsetStatus[e.adset]?.active ?? null;
+    const adActive = adStatusById[e.adId]?.active ?? adStatus[e.creative]?.active ?? aActive; // echter Ad-Status, sonst von Anzeigengruppe
     const buckets = [
       ensure('campaign', e.campaign, { active: cActive }),
       ensure('adset', e.adset, { active: aActive, parents: { campaign: e.campaign } }),

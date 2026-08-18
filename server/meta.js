@@ -91,6 +91,36 @@ async function graphGet(url) {
   return out;
 }
 
+/**
+ * Holt effective_status für eine konkrete ID-Liste (Batch-Endpoint ?ids=).
+ * Zuverlässiger als die paginierte Namensliste: liefert JEDE angefragte
+ * Entität – auch archivierte/pausierte – und matcht exakt per ID.
+ * Rückgabe: { [id]: { status, active } }.
+ */
+async function fetchStatusByIds(c, ids) {
+  const out = {};
+  const uniq = [...new Set((ids || []).filter(Boolean).map(String))];
+  for (let i = 0; i < uniq.length; i += 50) {
+    const batch = uniq.slice(i, i + 50);
+    const url = `${GRAPH}/${c.version}/?ids=${encodeURIComponent(batch.join(','))}&fields=effective_status&access_token=${c.token}`;
+    let json = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(url);
+        json = await res.json().catch(() => null);
+      } catch { json = null; }
+      if (json && json.error && RATE_LIMIT_CODES.has(json.error.code) && attempt < 2) { await sleep(2000 * (attempt + 1)); continue; }
+      break;
+    }
+    if (!json || json.error) continue; // Batch überspringen, Rest weiter versuchen
+    for (const [id, v] of Object.entries(json)) {
+      const s = v && v.effective_status;
+      if (s) out[id] = { status: s, active: s === 'ACTIVE' };
+    }
+  }
+  return out;
+}
+
 function insightsUrl({ account, version, token }, extra) {
   const params = new URLSearchParams({ access_token: token, limit: '500', ...extra });
   return `${GRAPH}/${version}/${account}/insights?${params.toString()}`;
@@ -250,7 +280,13 @@ export async function fetchMetaAll(customRange) {
     fetchDailyEntities(c, range).catch(() => []),
     fetchStatus(c).catch(() => ({ campaignStatus: {}, adsetStatus: {}, adStatus: {} })),
   ]);
-  return { records, entities, daily, dailyEntities, ...status, range };
+  // Ad-/Anzeigengruppen-Status gezielt per ID nachladen (zuverlässiger als die
+  // Namensliste; liefert auch archivierte/pausierte Anzeigen). Matching per ID.
+  const [adStatusById, adsetStatusById] = await Promise.all([
+    fetchStatusByIds(c, entities.map((e) => e.adId)).catch(() => ({})),
+    fetchStatusByIds(c, entities.map((e) => e.adsetId)).catch(() => ({})),
+  ]);
+  return { records, entities, daily, dailyEntities, ...status, adStatusById, adsetStatusById, range };
 }
 
 /** Rückwärtskompatibel: nur die Placement-Records (für aggregateFb). */
