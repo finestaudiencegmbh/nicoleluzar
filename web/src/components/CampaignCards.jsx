@@ -134,7 +134,10 @@ export default function CampaignCards({ hierarchy, dailyByEntity, features = {},
                   {adsets.map((a) => {
                     const aId = `${c.id}/${a.id}`;
                     const aOpen = open.has(aId);
-                    const ads = (a.ads || []).filter((ad) => !onlyActive || ad.active !== false);
+                    // "Nur aktive" strikt: nur bestätigt aktive (active === true)
+                    // Werbeanzeigen zeigen – also nur die JETZT laufenden, auch bei
+                    // einem früheren Zeitraum. Pausierte/archivierte/unbekannte raus.
+                    const ads = (a.ads || []).filter((ad) => !onlyActive || ad.active === true);
                     return (
                       <div key={aId} className="cc-sub">
                         <div className="cc-subhead" onClick={() => toggle(aId)} role="button">
@@ -184,7 +187,7 @@ export default function CampaignCards({ hierarchy, dailyByEntity, features = {},
                                 ))}
                               </div>
                             )}
-                            {ads.length === 0 && <div className="muted" style={{ padding: '8px 2px' }}>keine Werbeanzeigen</div>}
+                            {ads.length === 0 && <div className="muted" style={{ padding: '8px 2px' }}>{onlyActive ? 'keine aktiven Werbeanzeigen' : 'keine Werbeanzeigen'}</div>}
                           </div>
                         )}
                       </div>
