@@ -110,6 +110,7 @@ function tierFor(score, cfg) {
  */
 export function computeQuality(answers, cfg) {
   if (!answers) return null;
+  if (cfg && cfg.model === 'points') return computePoints(answers, cfg);
   if (cfg && cfg.model === 'criteria') return computeCriteria(answers, cfg);
   return computeWeighted(answers, cfg);
 }
@@ -142,6 +143,34 @@ function computeCriteria(answers, cfg) {
   const B = cfg.tierCounts?.B ?? 4;
   const key = count >= A ? 'A' : count >= B ? 'B' : 'C';
   return { score: null, tier: key, tierLabel: meta(key).label ?? key, count, ko: false, breakdown };
+}
+
+/**
+ * Punkte-Modell: 1) KO-Prüfung (eine Regel reicht -> D). 2) sonst je Dimension
+ * Punkte gemäß der ersten passenden Regel aufsummieren -> Tier per tierPoints
+ * (höchste erreichte min-Schwelle gewinnt). Deterministisch, exakter Vergleich.
+ */
+function computePoints(answers, cfg) {
+  const meta = (key) => (cfg.tiers || []).find((t) => t.key === key) || {};
+  for (const rule of cfg.ko || []) {
+    if (eqAny(trimVal(answers, rule.field), rule.equals)) {
+      return { score: 0, tier: 'D', tierLabel: meta('D').label ?? 'D', points: 0, ko: true, breakdown: {} };
+    }
+  }
+  let points = 0;
+  const breakdown = {};
+  for (const dim of cfg.points || []) {
+    const v = trimVal(answers, dim.field);
+    let p = 0;
+    for (const rule of dim.rules || []) {
+      if (eqAny(v, rule.equals)) { p = rule.points || 0; break; }
+    }
+    breakdown[dim.field] = p;
+    points += p;
+  }
+  const tier = [...(cfg.tierPoints || [])].sort((a, b) => b.min - a.min).find((t) => points >= t.min);
+  const key = tier?.key || 'C';
+  return { score: points, tier: key, tierLabel: meta(key).label ?? key, points, ko: false, breakdown };
 }
 
 /**

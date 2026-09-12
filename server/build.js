@@ -100,7 +100,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
   // Fragebogen-Modus "criteria" (Nicole): die Umfrage-Zeilen sind ihre eigene
   // Auswertungseinheit (eigenes Datum + UTM Medium) und werden NICHT mit dem
   // Leads-Tab verknüpft. Kein Per-Lead-Score, keine Umfrage-Zeilen als Leads.
-  const surveyMode = hasQuality && cfg?.model === 'criteria';
+  const surveyMode = hasQuality && (cfg?.model === 'criteria' || cfg?.model === 'points');
   const funnels = activeFunnels(project); // Segmentierung Live/VSL (oder null)
   const paidAdsets = new Set(overview.map((o) => o.adset.toLowerCase()));
   const campCfg = loadCampaignConfig();
