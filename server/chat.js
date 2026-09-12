@@ -100,13 +100,56 @@ export function buildContext(payload, filtered) {
   // FB-Hierarchie (Kampagnen-Kennzahlen)
   if (Array.isArray(fb.hierarchy)) {
     ctx.facebook_kampagnen = fb.hierarchy.slice(0, 25).map((c) => ({
-      name: c.name, aktiv: c.active, traffic: c.leadCampaign === false,
+      name: c.name, aktiv: c.active, traffic: c.leadCampaign === false, funnel: c.funnel || null,
       spend: round(c.spend), leads: c.leads,
-      cpl: round(c.cpl),
+      cpl: round(c.cpl), euro_pro_termin: round(c.cptermin), euro_pro_close: round(c.cpclose),
       ...(hasTickets ? { tickets: c.tickets, cpt: round(c.cpt) } : {}),
       ...(hasQuality ? { quali_rate: round(c.qualifiedRate) } : {}),
       cpm: round(c.cpm), ausg_ctr: round(c.outboundCtr), ausg_cpc: round(c.cpoc),
     }));
+    // Einzelne Werbeanzeigen (Creatives) für die Ad-Analyse – nach Spend sortiert.
+    const creatives = [];
+    for (const c of fb.hierarchy) for (const a of c.adsets || []) for (const ad of a.ads || []) {
+      creatives.push({
+        creative: ad.name, kampagne: c.name, anzeigengruppe: a.name, funnel: c.funnel || null, aktiv: ad.active,
+        spend: round(ad.spend), leads: ad.leads, cpl: round(ad.cpl),
+        ...(hasQuality ? { quali_rate: round(ad.qualifiedRate) } : {}),
+        cvr_start: round(ad.cvrStart), ausg_ctr: round(ad.outboundCtr), ausg_cpc: round(ad.cpoc),
+      });
+    }
+    creatives.sort((x, y) => (y.spend || 0) - (x.spend || 0));
+    ctx.top_werbeanzeigen = creatives.slice(0, 40);
+  }
+
+  // Lead-Qualität (Umfrage-/Punkte-Modell) – aggregiert, je Ad (UTM Medium).
+  if (payload.quality && Array.isArray(payload.quality.rows)) {
+    const rows = payload.quality.rows;
+    const dist = { A: 0, B: 0, C: 0, D: 0 };
+    const byMed = new Map();
+    for (const r of rows) {
+      if (dist[r.tier] != null) dist[r.tier] += 1;
+      const m = byMed.get(r.medium) || { medium: r.medium, gesamt: 0, a: 0, ab: 0, d: 0 };
+      m.gesamt += 1;
+      if (r.tier === 'A') { m.a += 1; m.ab += 1; } else if (r.tier === 'B') m.ab += 1; else if (r.tier === 'D') m.d += 1;
+      byMed.set(r.medium, m);
+    }
+    const qual = dist.A + dist.B;
+    ctx.lead_qualitaet = {
+      hinweis: 'Umfrage-basiert (Tier A-D). A/B = qualifiziert, D = KO/disqualifiziert. Betrifft nur den Webinar-Funnel (VSL hat keine Umfrage).',
+      bewertet: rows.length,
+      verteilung: dist,
+      qualifiziert: qual,
+      qualifiziert_rate: rows.length ? round(qual / rows.length) : null,
+      je_ad: [...byMed.values()].sort((a, b) => b.gesamt - a.gesamt).slice(0, 25)
+        .map((m) => ({ ...m, a_quote: m.gesamt ? round(m.a / m.gesamt) : null, ab_quote: m.gesamt ? round(m.ab / m.gesamt) : null })),
+    };
+  }
+
+  // Funnel-Segmente (z. B. Live/VSL) – Leads je Funnel.
+  if (project.funnels?.enabled) {
+    const fk = {};
+    for (const l of leads) { const f = l.funnel || '(ohne)'; fk[f] = (fk[f] || 0) + 1; }
+    ctx.leads_je_funnel = fk;
   }
   return ctx;
 }
@@ -127,7 +170,7 @@ function buildSystemPrompt(project) {
     '- Der Kontext bezieht sich auf den aktuell im Dashboard gewählten Zeitraum/Filter.',
   ];
   if (hasQuality) {
-    lines.push('- Lead-Qualität: Tier A/B = qualifiziert; basiert v. a. auf Einkommen (Haushaltsregel: <3.500 € + Partner = schwach).');
+    lines.push('- Lead-Qualität: Tier A/B = qualifiziert, D = disqualifiziert (KO). Das Scoring stammt aus dem Fragebogen ("Umfrage"); nutze die gelieferten Tiers/Verteilungen in "lead_qualitaet" (auch je Ad), erfinde keine Scoring-Regeln.');
   }
   lines.push(
     `- Dir liegen auch die einzelnen Leads inkl. Name, E-Mail, Telefon${hasQuality ? ' und Fragebogen-Antworten' : ''} vor (internes Tool). Du darfst daraus konkrete Personen nennen, Listen erstellen und Kontaktdaten ausgeben, wenn danach gefragt wird.`,
