@@ -151,6 +151,16 @@ export function buildContext(payload, filtered) {
     for (const l of leads) { const f = l.funnel || '(ohne)'; fk[f] = (fk[f] || 0) + 1; }
     ctx.leads_je_funnel = fk;
   }
+
+  // Tagesverlauf (für Fragen zu Schwankungen: CPL/Spend/Leads pro Tag).
+  if (Array.isArray(fb.daily?.spend)) {
+    const leadByDate = new Map((fb.daily.leads || []).map((d) => [d.date, d.leads]));
+    ctx.verlauf_pro_tag = fb.daily.spend.map((d) => {
+      const l = leadByDate.get(d.date) || 0;
+      return { tag: d.date, ad_spend: round(d.spend), leads: l, cpl: l ? round(d.spend / l) : null };
+    });
+    ctx.verlauf_hinweis = 'ad_spend = Konto-Tages-Spend (alle Kampagnen), leads = Sheet-Leads des Tages, cpl = ad_spend ÷ leads. Für CPL-Schwankungen diese Tagesreihe nutzen.';
+  }
   return ctx;
 }
 
@@ -202,7 +212,9 @@ export async function chat({ messages, context }) {
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 1024,
+    // Großzügiges Budget: "adaptive thinking" braucht Platz, sonst bleibt bei
+    // tiefen Analysefragen kein Token mehr für die eigentliche Antwort übrig.
+    max_tokens: 8000,
     thinking: { type: 'adaptive' },
     system,
     messages: messages.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content || '') })),
@@ -213,5 +225,9 @@ export async function chat({ messages, context }) {
     .map((b) => b.text)
     .join('\n')
     .trim();
-  return text || 'Dazu habe ich keine Antwort.';
+  if (text) return text;
+  if (response.stop_reason === 'max_tokens') {
+    return 'Die Antwort wurde abgeschnitten (Frage sehr umfangreich). Bitte etwas gezielter fragen – z. B. nach einer konkreten Kennzahl, einer Kampagne/Anzeige oder einem bestimmten Zeitraum.';
+  }
+  return 'Dazu habe ich keine Antwort.';
 }
