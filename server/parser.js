@@ -323,6 +323,7 @@ export function parseSheets(sheets, project = DEFAULT_PROJECT) {
 
   for (const sheet of sheets) {
     const rows = sheet.values || [];
+    const tabTitle = sheet.title || '';
     for (const table of iterateTables(rows, project)) {
       for (const row of table.body) {
         const o = rowToObj(table.header, row);
@@ -331,14 +332,14 @@ export function parseSheets(sheets, project = DEFAULT_PROJECT) {
           if (r) overview.push(r);
         } else if (table.type === 'termine') {
           const r = parseTermineRow(o, termineFields, terminePreferLast);
-          if (r) termine.push(r);
+          if (r) { r.tabTitle = tabTitle; termine.push(r); }
         } else if (table.type === 'closings') {
           const r = parseClosingRow(o, closingFields);
           if (r && r.summary) closingsSummary = r;
-          else if (r) closings.push(r);
+          else if (r) { r.tabTitle = tabTitle; closings.push(r); }
         } else if (table.type === 'leads') {
           const r = parseLeadRow(o, leadFields);
-          if (r) leads.push(r);
+          if (r) { r.tabTitle = tabTitle; leads.push(r); }
         } else if (table.type === 'tickets') {
           const r = parseTicketRow(o, project);
           if (!r) continue;
@@ -346,6 +347,7 @@ export function parseSheets(sheets, project = DEFAULT_PROJECT) {
           const dk = `${r.email}|${r.at || ''}`;
           if (seenTickets.has(dk)) continue;
           seenTickets.add(dk);
+          r.tabTitle = tabTitle;
           tickets.push(r);
         }
       }

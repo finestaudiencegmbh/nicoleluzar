@@ -1,6 +1,7 @@
 import { computeQuality } from './scoring.js';
 import { loadCampaignConfig } from './campaigns.js';
 import { DEFAULT_PROJECT } from './project.js';
+import { activeFunnels, funnelForRecord } from './funnels.js';
 
 const collapse = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
 
@@ -100,6 +101,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
   // Auswertungseinheit (eigenes Datum + UTM Medium) und werden NICHT mit dem
   // Leads-Tab verknüpft. Kein Per-Lead-Score, keine Umfrage-Zeilen als Leads.
   const surveyMode = hasQuality && cfg?.model === 'criteria';
+  const funnels = activeFunnels(project); // Segmentierung Live/VSL (oder null)
   const paidAdsets = new Set(overview.map((o) => o.adset.toLowerCase()));
   const campCfg = loadCampaignConfig();
   const organicPatterns = campCfg.organicPatterns || ['manychat', 'bio'];
@@ -136,6 +138,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
       hasTicket: hasTickets && Boolean(l.ticketAt),
       utm: collapse(l.utm.source) ? { ...l.utm } : (t ? { ...t.utm } : { ...l.utm }),
       answers: t?.answers || null,
+      tabTitle: l.tabTitle || '',
     });
   }
 
@@ -199,6 +202,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
       ticketAt: r.ticketAt,
       hasTicket: r.hasTicket,
       sourceType: paid ? 'paid' : 'organic',
+      funnel: funnelForRecord(funnels, r.tabTitle, r.utm),
       campaign,
       adset,
       creative,
@@ -242,6 +246,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
       wonAt: t.wonAt,
       appointmentAt: t.appointmentAt,
       sourceType: paid ? 'paid' : 'organic',
+      funnel: funnelForRecord(funnels, t.tabTitle, t.utm),
       campaign,
       adset,
       creative,
@@ -265,6 +270,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
       cashCollectGross: c.cashCollectGross,
       wonAt: c.wonAt,
       sourceType: paid ? 'paid' : 'organic',
+      funnel: funnelForRecord(funnels, c.tabTitle, c.utm),
       campaign,
       adset,
       creative,
@@ -293,6 +299,7 @@ export function buildDataset({ leads, tickets, overview, termine = [], closings 
         tier: q.tier,
         medium: collapse(t.utmMedium) || '(kein Medium)',
         sourceType: paid ? 'paid' : 'organic',
+        funnel: funnelForRecord(funnels, t.tabTitle, t.utm),
         campaign,
         adset,
         creative,

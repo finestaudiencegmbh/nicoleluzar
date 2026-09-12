@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchData } from './api.js';
-import { applyFilters, aggregate, computeKpis, tierDistribution, leadsByDay, cplByDay, DIMENSIONS, fmtDate } from './lib.js';
+import { applyFilters, aggregate, computeKpis, tierDistribution, leadsByDay, cplByDay, DIMENSIONS, fmtDate, entityKey } from './lib.js';
 import Kpis from './components/Kpis.jsx';
 import Filters from './components/Filters.jsx';
 import BreakdownTable from './components/BreakdownTable.jsx';
@@ -10,6 +10,7 @@ import CampaignCards from './components/CampaignCards.jsx';
 import DateRangePicker from './components/DateRangePicker.jsx';
 import SourcesView from './components/SourcesView.jsx';
 import QualityView from './components/QualityView.jsx';
+import SegmentSwitcher from './components/SegmentSwitcher.jsx';
 import ChatBot from './components/ChatBot.jsx';
 import { fmtEur, fmtInt } from './lib.js';
 
@@ -26,6 +27,17 @@ const EMPTY_FILTERS = {
   income: '', realEstate: '', employment: '', from: '', to: '', onlyTickets: false, tiers: [],
 };
 
+/** Tages-Spend eines Funnels: Summe der Kampagnen-Tagesreihen (dailyByEntity). */
+function funnelDailySpend(hier, dailyByEntity) {
+  const camp = dailyByEntity?.campaign || {};
+  const byDate = new Map();
+  for (const c of hier || []) {
+    const series = camp[entityKey('campaign', { campaign: c.name })] || [];
+    for (const d of series) byDate.set(d.date, (byDate.get(d.date) || 0) + (d.spend || 0));
+  }
+  return [...byDate.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, spend]) => ({ date, spend }));
+}
+
 export default function App() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -34,6 +46,7 @@ export default function App() {
   const [range, setRange] = useState({ from: '', to: '' });
   const [tab, setTab] = useState('campaign');
   const [view, setView] = useState('dashboard');
+  const [segment, setSegment] = useState('all'); // Gesamt | Live | VSL (Funnel-Segment)
 
   const load = async (refresh = false, r = range) => {
     setLoading(true);
@@ -91,17 +104,49 @@ export default function App() {
       document.title = `${brandTitle} · ${suffix}`;
     }
   }, [project?.name, features.hasTickets, brandTitle, ticketLabel.plural]);
-  const filtered = useMemo(() => (data ? applyFilters(data.leads, filters) : []), [data, filters]);
-  const kpis = useMemo(() => (data ? computeKpis(filtered, data.overviewByAdset, fb) : null), [data, filtered, fb]);
+  // --- Funnel-Segmentierung (Gesamt/Live/VSL) ---------------------------------
+  const funnels = project?.funnels || null;
+  const bySeg = (arr) => (segment === 'all' || !funnels ? (arr || []) : (arr || []).filter((r) => r.funnel === segment));
+  const segLeads = useMemo(() => bySeg(data?.leads), [data, segment, funnels]);
+  const segTermine = useMemo(() => bySeg(data?.termine), [data, segment, funnels]);
+  const segClosings = useMemo(() => bySeg(data?.closings), [data, segment, funnels]);
+  const segFb = useMemo(() => {
+    if (!fb) return null;
+    if (segment === 'all' || !funnels) return fb;
+    const hier = (fb.hierarchy || []).filter((c) => c.funnel === segment);
+    const spend = hier.reduce((s, c) => s + (c.spend || 0), 0);
+    const leadSpend = hier.filter((c) => c.leadCampaign).reduce((s, c) => s + (c.spend || 0), 0);
+    const impressions = hier.reduce((s, c) => s + (c.impressions || 0), 0);
+    return {
+      ...fb,
+      hierarchy: hier,
+      totals: { ...(fb.totals || {}), spend, leadSpend, nonLeadSpend: spend - leadSpend, impressions },
+      daily: { ...(fb.daily || {}), spend: funnelDailySpend(hier, fb.dailyByEntity) },
+    };
+  }, [fb, segment, funnels]);
+  const segQuality = useMemo(() => {
+    if (!data?.quality) return null;
+    if (segment === 'all' || !funnels) return data.quality;
+    return { ...data.quality, rows: (data.quality.rows || []).filter((r) => r.funnel === segment) };
+  }, [data, segment, funnels]);
+  const segCounts = useMemo(() => {
+    const leads = data?.leads || [];
+    const c = { all: leads.length };
+    for (const seg of funnels?.segments || []) c[seg.key] = leads.filter((l) => l.funnel === seg.key).length;
+    return c;
+  }, [data, funnels]);
+
+  const filtered = useMemo(() => (data ? applyFilters(segLeads, filters) : []), [data, segLeads, filters]);
+  const kpis = useMemo(() => (data ? computeKpis(filtered, data.overviewByAdset, segFb) : null), [data, filtered, segFb]);
   // Funnel-Stufe "Termine" (gleiche Filter/Zeitraum wie die Leads)
-  const filteredTermine = useMemo(() => (data ? applyFilters(data.termine || [], filters) : []), [data, filters]);
+  const filteredTermine = useMemo(() => (data ? applyFilters(segTermine, filters) : []), [data, segTermine, filters]);
   const termineKpis = useMemo(() => {
     const total = filteredTermine.length;
     const paid = filteredTermine.filter((t) => t.sourceType === 'paid').length;
     return { has: (data?.counts?.termine || 0) > 0, total, paid, organic: total - paid };
   }, [filteredTermine, data]);
   // Funnel-Stufe "Closings" (Verkäufe + Umsatz + Cash Collect, je netto/brutto)
-  const filteredClosings = useMemo(() => (data ? applyFilters(data.closings || [], filters) : []), [data, filters]);
+  const filteredClosings = useMemo(() => (data ? applyFilters(segClosings, filters) : []), [data, segClosings, filters]);
   const closingsKpis = useMemo(() => {
     const sum = (arr, f) => arr.reduce((s, c) => s + (f(c) || 0), 0);
     const total = filteredClosings.length;
@@ -137,7 +182,7 @@ export default function App() {
   const leadDaily = useMemo(() => (data ? leadsByDay(filtered) : []), [data, filtered]);
   // Termine pro Tag (nach Eintrags-/Lead-Datum, gleiche Achse wie die Leads)
   const termineDaily = useMemo(() => (data ? leadsByDay(filteredTermine) : []), [data, filteredTermine]);
-  const cplDaily = useMemo(() => ((hasFb && fb.daily) ? cplByDay(fb.daily.spend, filtered) : []), [hasFb, fb, filtered]);
+  const cplDaily = useMemo(() => ((hasFb && segFb?.daily) ? cplByDay(segFb.daily.spend, filtered) : []), [hasFb, segFb, filtered]);
 
   // Drill-Pfad NUR für "Performance nach Ebene" – getrennt von den globalen
   // Filtern. Klick = reinzoomen, ohne dauerhaften globalen Filter zu setzen.
@@ -163,7 +208,7 @@ export default function App() {
   const paidRows = useMemo(() => {
     if (!data) return [];
     const leads = drillLeads.filter((l) => l.sourceType === 'paid' && l.campaign !== UNATTRIB);
-    return aggregate(leads, tab, data.overviewByAdset, fb, drill);
+    return aggregate(leads, tab, data.overviewByAdset, segFb, drill);
   }, [data, drillLeads, tab, fb, drill]);
 
   const organicRows = useMemo(() => {
@@ -177,7 +222,7 @@ export default function App() {
     const dim = orgDrill ? 'organicAdset' : 'organicCampaign';
     const rows = aggregate(
       leads.map((l) => ({ ...l, organicCampaign: l.organicCampaign || '(direkt)', organicAdset: l.organicAdset || '(direkt)' })),
-      dim, data.overviewByAdset, fb, {}, { addFbRows: false }
+      dim, data.overviewByAdset, segFb, {}, { addFbRows: false }
     );
     return rows;
   }, [data, filtered, fb, orgDrill]);
@@ -257,6 +302,9 @@ export default function App() {
 
         {data && (
           <>
+            {funnels && funnels.segments && funnels.segments.length > 1 && (
+              <SegmentSwitcher segments={funnels.segments} segment={segment} onChange={setSegment} counts={segCounts} />
+            )}
             <Filters leads={data.leads} filters={filters} setFilters={setFilters} tiers={tiers} features={uiFeatures} onReset={() => setFilters({ ...EMPTY_FILTERS, from: range.from, to: range.to })} />
 
             {view === 'dashboard' && (
@@ -273,7 +321,7 @@ export default function App() {
                       ]} />
                     <div className="charts-grid">
                       <TimeChart title="Ad-Spend pro Tag" formatY={(v) => fmtEur(Math.round(v))}
-                        series={[{ key: 'spend', label: 'Ad-Spend', color: accent, data: (hasFb && fb.daily ? fb.daily.spend : []).map((d) => ({ date: d.date, value: d.spend })) }]} />
+                        series={[{ key: 'spend', label: 'Ad-Spend', color: accent, data: (hasFb && segFb?.daily ? segFb.daily.spend : []).map((d) => ({ date: d.date, value: d.spend })) }]} />
                       <TimeChart title="CPL pro Tag" formatY={(v) => fmtEur(Math.round(v))}
                         series={[{ key: 'cpl', label: 'CPL (Ads)', color: '#a78bfa', data: cplDaily.map((d) => ({ date: d.date, value: d.value })) }]} />
                     </div>
@@ -329,10 +377,10 @@ export default function App() {
             )}
 
             {view === 'campaigns' && (
-              hasFb && fb.hierarchy ? (
+              hasFb && segFb?.hierarchy ? (
                 <section className="panel">
                   <div className="panel-head"><div><h2>Kampagnen-Aufschlüsselung</h2><span className="panel-sub">Kampagne → Anzeigengruppe → Creative · Facebook-Kennzahlen + Lead-Attribution</span></div></div>
-                  <CampaignCards hierarchy={fb.hierarchy} dailyByEntity={fb.dailyByEntity} features={qualiFeatures} accent={accent} ticketLabel={ticketLabel} />
+                  <CampaignCards hierarchy={segFb.hierarchy} dailyByEntity={segFb.dailyByEntity} features={qualiFeatures} accent={accent} ticketLabel={ticketLabel} />
                 </section>
               ) : (
                 <section className="panel">
@@ -350,7 +398,7 @@ export default function App() {
             )}
 
             {view === 'quality' && surveyQuality && (
-              <QualityView quality={data.quality} range={range} accent={accent} />
+              <QualityView quality={segQuality} range={range} accent={accent} />
             )}
 
             {view === 'sources' && <SourcesView leads={filtered} />}

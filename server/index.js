@@ -14,6 +14,7 @@ import { isMetaConfigured, fetchMetaAll } from './meta.js';
 import { combineMetaWithLeads } from './combine.js';
 import { isChatConfigured, buildContext, chat } from './chat.js';
 import { loadProjectConfig, publicProject } from './project.js';
+import { activeFunnels } from './funnels.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -95,7 +96,7 @@ async function loadDataset({ refresh = false, from = '', to = '' } = {}) {
         if (to && day > to) return false;
         return true;
       });
-      const combined = combineMetaWithLeads(all, leadsInRange, surveysInRange, byRange(dataset.termine), byRange(dataset.closings));
+      const combined = combineMetaWithLeads(all, leadsInRange, surveysInRange, byRange(dataset.termine), byRange(dataset.closings), activeFunnels(PROJECT));
       fb = { configured: true, provider: 'meta', error: null, fetchedAt: new Date().toISOString(), ...agg, hierarchy: combined.hierarchy, daily: combined.daily, totals: combined.totals, nonLeadCampaigns: combined.nonLeadCampaigns, uocByDim: combined.uocByDim, dimMeta: combined.dimMeta, dailyByEntity: combined.dailyByEntity };
     } catch (err) {
       console.error('Meta-Fehler:', err.message);

@@ -17,6 +17,7 @@
  */
 
 import { loadCampaignConfig, isLeadCampaign } from './campaigns.js';
+import { funnelForName } from './funnels.js';
 
 // Normalisiert Namen fürs Matching FB <-> Sheet: vereinheitlicht Bindestriche
 // (– — −  ->  -), entfernt "Kopie"/"Copy"-Suffixe (Sheet hat oft "… – Kopie",
@@ -87,7 +88,7 @@ function pathKey(dim, { campaign, adset, creative }) {
  * @param {object} meta   Ergebnis aus fetchMetaAll() (entities, daily, status)
  * @param {array}  leads  Lead-Records aus buildDataset (mit campaign/adset/creative, wonAt, hasTicket)
  */
-export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], closings = []) {
+export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], closings = [], funnels = null) {
   const { entities = [], daily = [], dailyEntities = [], campaignStatus = {}, adsetStatus = {}, adStatus = {}, adStatusById = {}, adsetStatusById = {} } = meta || {};
   const campCfg = loadCampaignConfig();
 
@@ -169,6 +170,7 @@ export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], cl
         status: campaignStatus[e.campaign]?.status ?? null,
         objective,
         leadCampaign: isLeadCampaign(e.campaign, objective, campCfg),
+        funnel: funnelForName(funnels, e.campaign),
         _m: emptyMetrics(),
         adsets: new Map(),
       });
@@ -250,7 +252,7 @@ export function combineMetaWithLeads(meta, leads, surveys = [], termine = [], cl
     }
     result.push({
       id: c.id, name: c.name, level: 'campaign', active: c.active, status: c.status,
-      objective: c.objective, leadCampaign: c.leadCampaign,
+      objective: c.objective, leadCampaign: c.leadCampaign, funnel: c.funnel,
       ...derive(c._m),
       adsets: adsets.sort((x, y) => y.spend - x.spend),
     });

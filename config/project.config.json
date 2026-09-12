@@ -23,6 +23,16 @@
     "plural": "Tickets"
   },
 
+  "_comment_funnels": "Segmentierung des Dashboards (Umschalter oben: Gesamt · Live · VSL). Jede Sheet-Zeile/Meta-Kampagne wird einem Funnel zugeordnet: 1) Tab-Titel enthält titleMatch (z. B. Tab 'VSL Leads'), 2) sonst UTM/Kampagnenname enthält utmMatch ('vsl'), 3) sonst default. 'live' = Webinar (Standard). Die Attribution ist funnel-sicher: VSL-Leads zählen nur auf VSL-Kampagnen. VSL hat keine Umfrage -> im VSL-Segment keine Quali-Rate.",
+  "funnels": {
+    "enabled": true,
+    "default": "live",
+    "segments": [
+      { "key": "live", "label": "Live", "titleMatch": [], "utmMatch": [] },
+      { "key": "vsl", "label": "VSL", "titleMatch": ["vsl"], "utmMatch": ["vsl"] }
+    ]
+  },
+
   "_comment_sheet": "Tabellen-Erkennung + Spalten-Mapping dieses Sheets (Nicole Luzar). Schlüssel normalisiert: kleingeschrieben, ohne ? : ., Mehrfach-Leerzeichen kollabiert. overview = Creative-Übersicht (Adspend je Creative), leads = Leads-Tab (Live-Webinar). detect.all müssen alle vorhanden sein, detect.any mindestens eines (grenzt die Tabs sauber gegeneinander ab – v. a. Leads gegen Teilnehmer/Watchtime/Termine/Closings).",
   "sheet": {
     "overview": {

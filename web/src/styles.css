@@ -814,3 +814,11 @@ body {
 .qtable th.qt-name, .qtable td.qt-name { text-align: left; }
 .qtable td.qt-name { max-width: 340px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 .qtable tbody tr:hover { background: var(--accent-soft); }
+
+/* Funnel-Umschalter (Gesamt · Live · VSL) */
+.seg-switch { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 16px; }
+.seg-pill { display: inline-flex; align-items: center; gap: 9px; padding: 8px 15px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.03); color: var(--ink-soft); cursor: pointer; font-weight: 700; font-size: 14px; transition: background .12s, border-color .12s; }
+.seg-pill:hover { background: var(--accent-soft); }
+.seg-pill.active { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--accent); }
+.seg-count { font-weight: 700; font-size: 12.5px; color: var(--muted); background: rgba(255,255,255,0.06); padding: 1px 9px; border-radius: 999px; }
+.seg-pill.active .seg-count { color: var(--accent-ink); background: rgba(0,0,0,0.25); }

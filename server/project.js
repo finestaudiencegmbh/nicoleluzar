@@ -173,5 +173,6 @@ export function publicProject(cfg) {
     branding: cfg.branding,
     features: cfg.features,
     ticketLabel: cfg.ticketLabel,
+    funnels: cfg.funnels && cfg.funnels.enabled ? cfg.funnels : null,
   };
 }
