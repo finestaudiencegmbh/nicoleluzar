@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { fmtEur, fmtInt, fmtPct, entityKey } from '../lib.js';
 import GraphPanel from './GraphPanel.jsx';
 
@@ -92,6 +92,41 @@ export default function CampaignCards({ hierarchy, dailyByEntity, features = {},
   const [graph, setGraph] = useState(null);
   const toggle = (id) => setOpen((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
+  // --- Manuelle Reihenfolge (Drag & Drop, pro Browser gemerkt) --------------
+  const ORDER_KEY = 'nl-campaign-order';
+  const [order, setOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(ORDER_KEY) || '[]'); } catch { return []; }
+  });
+  const [dragOver, setDragOver] = useState(null);
+  const dragName = useRef(null);
+  const saveOrder = (names) => {
+    setOrder(names);
+    try { names.length ? localStorage.setItem(ORDER_KEY, JSON.stringify(names)) : localStorage.removeItem(ORDER_KEY); } catch { /* ignore */ }
+  };
+  // Kampagnen nach gespeicherter Reihenfolge sortieren; Unbekannte (neue) ans
+  // Ende nach Spend. Ohne gespeicherte Reihenfolge bleibt die Server-Sortierung.
+  const applyOrder = (list) => {
+    if (!order.length) return list;
+    const rank = new Map(order.map((n, i) => [n, i]));
+    return list.slice().sort((a, b) => {
+      const ra = rank.has(a.name) ? rank.get(a.name) : Infinity;
+      const rb = rank.has(b.name) ? rank.get(b.name) : Infinity;
+      return ra !== rb ? ra - rb : (b.spend || 0) - (a.spend || 0);
+    });
+  };
+  const handleDrop = (targetName) => {
+    const from = dragName.current;
+    dragName.current = null; setDragOver(null);
+    if (!from || from === targetName) return;
+    // volle Reihenfolge ALLER Kampagnen (auch ausgeblendeter) neu setzen
+    const names = applyOrder(hierarchy || []).map((c) => c.name);
+    const fi = names.indexOf(from);
+    const ti = names.indexOf(targetName);
+    if (fi < 0 || ti < 0) return;
+    names.splice(ti, 0, names.splice(fi, 1)[0]);
+    saveOrder(names);
+  };
+
   // Tagesreihe einer Entität (über den vollen Pfad) holen und Grafik öffnen
   const seriesFor = (dim, parts) => dailyByEntity?.[dim]?.[entityKey(dim, parts)];
   const openGraph = (dim, parts, title) => {
@@ -99,7 +134,7 @@ export default function CampaignCards({ hierarchy, dailyByEntity, features = {},
   };
   const hasGraph = (dim, parts) => Boolean(seriesFor(dim, parts)?.length);
 
-  const campaigns = (hierarchy || []).filter((c) => !onlyActive || c.active !== false);
+  const campaigns = applyOrder((hierarchy || []).filter((c) => !onlyActive || c.active !== false));
 
   return (
     <div>
@@ -109,6 +144,8 @@ export default function CampaignCards({ hierarchy, dailyByEntity, features = {},
           <span className="switch-track"><span className="switch-thumb" /></span>
           <span className="switch-label">Nur aktive anzeigen</span>
         </label>
+        <span className="cc-order-hint">Karten am Griff <span className="cc-grip-mini">⠿</span> ziehen zum Sortieren</span>
+        {order.length > 0 && <button type="button" className="cc-order-reset" onClick={() => saveOrder([])}>Reihenfolge zurücksetzen</button>}
         <span className="muted">{campaigns.length} Kampagnen</span>
       </div>
 
@@ -118,8 +155,15 @@ export default function CampaignCards({ hierarchy, dailyByEntity, features = {},
           const leadHidden = c.leadCampaign === false;
           const adsets = c.adsets.filter((a) => !onlyActive || a.active !== false);
           return (
-            <div key={c.id} className={`cc-card ${leadHidden ? 'is-traffic' : ''}`}>
+            <div key={c.id} className={`cc-card ${leadHidden ? 'is-traffic' : ''} ${dragOver === c.name ? 'cc-dragover' : ''}`}
+              onDragOver={(e) => { if (dragName.current) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (dragOver !== c.name) setDragOver(c.name); } }}
+              onDragLeave={() => { if (dragOver === c.name) setDragOver(null); }}
+              onDrop={() => handleDrop(c.name)}>
               <div className="cc-head" onClick={() => toggle(c.id)} role="button">
+                <span className="cc-grip" draggable title="Ziehen zum Sortieren"
+                  onClick={(e) => e.stopPropagation()}
+                  onDragStart={(e) => { dragName.current = c.name; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', c.name); } catch { /* ignore */ } }}
+                  onDragEnd={() => { dragName.current = null; setDragOver(null); }}>⠿</span>
                 <span className={`caret ${cOpen ? 'open' : ''}`}>▶</span>
                 <StatusDot active={c.active} />
                 <span className="cc-name" title={c.name}>{c.name}</span>
