@@ -334,34 +334,6 @@ export default function App() {
 
                 <LeadHeatmap leads={filtered} accent={accent} />
 
-                <section className="panel">
-                  <div className="panel-head"><div><h2>Bezahlt · Meta</h2><span className="panel-sub">Performance nach Kampagne, Anzeigengruppe, Creative und Placement</span></div></div>
-                  <div className="tabs-row">
-                    <div className="tabs">
-                      {DIMENSIONS.map((d) => (
-                        <button key={d.key} className={`tab ${tab === d.key ? 'active' : ''}`} onClick={() => setTab(d.key)}>{d.label}</button>
-                      ))}
-                    </div>
-                    <span className="tabs-hint">Zeile anklicken = eine Ebene tiefer</span>
-                  </div>
-                  {DIMENSIONS.some((d) => drill[d.key]) && (
-                    <div className="drill-crumbs">
-                      <span className="crumb-label">Aufgeschlüsselt nach:</span>
-                      {DIMENSIONS.filter((d) => drill[d.key]).map((d) => (
-                        <span key={d.key} className="crumb">
-                          <span className="crumb-dim">{d.label}:</span> {drill[d.key].length > 38 ? drill[d.key].slice(0, 35) + '…' : drill[d.key]}
-                          <button className="crumb-x" title="Diese Ebene verlassen" onClick={() => { setDrill((dd) => ({ ...dd, [d.key]: '' })); setTab(d.key); }}>×</button>
-                        </span>
-                      ))}
-                      <button className="crumb-clear" onClick={() => { setDrill({ campaign: '', adset: '', creative: '' }); setTab('campaign'); }}>zurücksetzen</button>
-                    </div>
-                  )}
-                  {!hasFb && (tab === 'creative' || tab === 'placement') && (
-                    <div className="info-note">Adspend ist je Anzeigengruppe im Sheet hinterlegt – auf Creative-/Placement-Ebene über die Facebook-Anbindung.</div>
-                  )}
-                  <BreakdownTable rows={paidRows} dimLabel={DIMENSIONS.find((d) => d.key === tab).label} onSelect={selectDim} tiers={tiers} features={uiFeatures} ticketLabel={ticketLabel} />
-                </section>
-
                 {organicRows.length > 0 && (
                   <section className="panel">
                     <div className="panel-head"><div><h2>Organisch</h2><span className="panel-sub">Leads ohne Ad-Kosten · ManyChat-Flows, Bios, Direkt …</span></div></div>
