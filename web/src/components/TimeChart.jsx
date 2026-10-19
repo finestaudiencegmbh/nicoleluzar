@@ -86,8 +86,9 @@ export default function TimeChart({ title, series, formatY = (v) => v, height = 
             return (
               <g key={s.key}>
                 <path d={area} fill={s.color} opacity="0.12" />
-                <path d={line} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-                {hover != null && <circle cx={pts[hover].x} cy={pts[hover].y} r="4" fill={s.color} stroke="#0b0b14" strokeWidth="1.5" />}
+                <path d={line} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                  style={{ filter: `drop-shadow(0 0 2px ${s.color}) drop-shadow(0 0 6px ${s.color})` }} />
+                {hover != null && <circle cx={pts[hover].x} cy={pts[hover].y} r="4" fill={s.color} stroke="#0b0b14" strokeWidth="1.5" style={{ filter: `drop-shadow(0 0 4px ${s.color})` }} />}
               </g>
             );
           })}
