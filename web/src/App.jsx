@@ -11,6 +11,7 @@ import DateRangePicker from './components/DateRangePicker.jsx';
 import SourcesView from './components/SourcesView.jsx';
 import QualityView from './components/QualityView.jsx';
 import SegmentSwitcher from './components/SegmentSwitcher.jsx';
+import LeadHeatmap from './components/LeadHeatmap.jsx';
 import ChatBot from './components/ChatBot.jsx';
 import { fmtEur, fmtInt } from './lib.js';
 
@@ -330,6 +331,8 @@ export default function App() {
 
                 {/* KPI-Boxen darunter */}
                 <Kpis kpis={kpis} dist={dist} tiers={tiers} features={uiFeatures} accent={accent} ticketLabel={ticketLabel} termine={termineKpis} closings={closingsKpis} />
+
+                <LeadHeatmap leads={filtered} accent={accent} />
 
                 <section className="panel">
                   <div className="panel-head"><div><h2>Bezahlt · Meta</h2><span className="panel-sub">Performance nach Kampagne, Anzeigengruppe, Creative und Placement</span></div></div>

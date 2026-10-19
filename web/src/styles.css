@@ -832,3 +832,14 @@ body {
 .cc-grip-mini { letter-spacing: -2px; }
 .cc-order-reset { margin-left: 10px; background: none; border: none; color: var(--accent-ink); font-size: 12.5px; cursor: pointer; text-decoration: underline; padding: 0; }
 @media (max-width: 760px) { .cc-order-hint { display: none; } }
+
+/* Leadaktivitäten-Heatmap (Wochentag × Uhrzeit) */
+.hm-best { font-size: 13px; color: var(--muted); white-space: nowrap; align-self: center; }
+.hm-wrap { overflow-x: auto; }
+.hm-grid { display: grid; grid-template-columns: 34px repeat(24, minmax(16px, 1fr)); gap: 3px; align-items: center; min-width: 580px; }
+.hm-hourlabel { font-size: 11px; color: var(--muted); }
+.hm-daylabel { font-size: 12px; color: var(--muted); padding-right: 6px; text-align: right; }
+.hm-cell { aspect-ratio: 1 / 1; border-radius: 4px; transition: transform .08s; }
+.hm-cell:hover { transform: scale(1.15); outline: 1px solid var(--accent); }
+.hm-legend { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-top: 12px; font-size: 11.5px; color: var(--muted); }
+.hm-swatch { width: 16px; height: 16px; border-radius: 4px; }
