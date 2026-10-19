@@ -196,7 +196,7 @@ function OverlayChart({ series }) {
             return <line key={i} x1={pad.l} y1={yy} x2={w - pad.r} y2={yy} className="chart-grid" />;
           })}
           {prepared.map((s) => (
-            <path key={s.key} d={pathFor(s.pts)} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+            <path key={s.key} d={pathFor(s.pts)} fill="none" stroke={s.color} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 3px ${s.color})` }} />
           ))}
           {hover != null && <line x1={x(hover)} y1={pad.t} x2={x(hover)} y2={pad.t + plotH} className="chart-hover-line" />}
           {hover != null && prepared.map((s) => s.pts[hover] && (

@@ -1,3 +1,19 @@
+// ---- Farben ----------------------------------------------------------------
+export function hexToRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+  return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : { r: 236, g: 118, b: 30 };
+}
+const toHex = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+// amt 0..1: Richtung Weiß (lighten) bzw. Schwarz (darken) mischen
+export function lighten(hex, amt) {
+  const { r, g, b } = hexToRgb(hex);
+  return `#${toHex(r + (255 - r) * amt)}${toHex(g + (255 - g) * amt)}${toHex(b + (255 - b) * amt)}`;
+}
+export function darken(hex, amt) {
+  const { r, g, b } = hexToRgb(hex);
+  return `#${toHex(r * (1 - amt))}${toHex(g * (1 - amt))}${toHex(b * (1 - amt))}`;
+}
+
 // ---- Formatierung ----------------------------------------------------------
 const eur = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 const eur2 = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });

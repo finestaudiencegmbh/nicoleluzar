@@ -67,6 +67,15 @@ export default function TimeChart({ title, series, formatY = (v) => v, height = 
       </div>
       <div className="chart-wrap">
         <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="chart-svg" onMouseMove={onMove} onMouseLeave={() => setHover(null)} onTouchStart={onTouch} onTouchMove={onTouch} style={{ touchAction: 'pan-y' }}>
+          {/* weicher Verlauf unter jeder Linie (oben zart, nach unten transparent) */}
+          <defs>
+            {series.map((s) => (
+              <linearGradient key={s.key} id={`fill-${s.key}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={s.color} stopOpacity="0.22" />
+                <stop offset="100%" stopColor={s.color} stopOpacity="0" />
+              </linearGradient>
+            ))}
+          </defs>
           {/* horizontale Gitterlinien + Y-Beschriftung */}
           {Array.from({ length: yTicks + 1 }).map((_, i) => {
             const val = (maxY / yTicks) * i;
@@ -85,10 +94,10 @@ export default function TimeChart({ title, series, formatY = (v) => v, height = 
             const area = `${line} L${pts[pts.length - 1].x},${pad.t + plotH} L${pts[0].x},${pad.t + plotH} Z`;
             return (
               <g key={s.key}>
-                <path d={area} fill={s.color} opacity="0.12" />
-                <path d={line} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
-                  style={{ filter: `drop-shadow(0 0 2px ${s.color}) drop-shadow(0 0 6px ${s.color})` }} />
-                {hover != null && <circle cx={pts[hover].x} cy={pts[hover].y} r="4" fill={s.color} stroke="#0b0b14" strokeWidth="1.5" style={{ filter: `drop-shadow(0 0 4px ${s.color})` }} />}
+                <path d={area} fill={`url(#fill-${s.key})`} />
+                <path d={line} fill="none" stroke={s.color} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round"
+                  style={{ filter: `drop-shadow(0 0 3px ${s.color})` }} />
+                {hover != null && <circle cx={pts[hover].x} cy={pts[hover].y} r="4" fill={s.color} stroke="#0a0a0a" strokeWidth="1.5" style={{ filter: `drop-shadow(0 0 3px ${s.color})` }} />}
               </g>
             );
           })}

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchData } from './api.js';
-import { applyFilters, aggregate, computeKpis, tierDistribution, leadsByDay, cplByDay, DIMENSIONS, fmtDate, entityKey } from './lib.js';
+import { applyFilters, aggregate, computeKpis, tierDistribution, leadsByDay, cplByDay, DIMENSIONS, fmtDate, entityKey, hexToRgb, lighten, darken } from './lib.js';
 import Kpis from './components/Kpis.jsx';
 import Filters from './components/Filters.jsx';
 import BreakdownTable from './components/BreakdownTable.jsx';
@@ -95,9 +95,18 @@ export default function App() {
   const brandTitle = project?.shortName || 'Dashboard';
   const brandSub = project?.subtitle || '';
 
-  // Akzentfarbe als CSS-Variable + Seitentitel zur Laufzeit setzen
+  // Akzentfarbe als CSS-Variablen zur Laufzeit ableiten (alle Töne aus einer Farbe)
   useEffect(() => {
-    if (accent) document.documentElement.style.setProperty('--accent', accent);
+    if (!accent) return;
+    const root = document.documentElement.style;
+    const { r, g, b } = hexToRgb(accent);
+    root.setProperty('--accent', accent);
+    root.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
+    root.setProperty('--accent-2', lighten(accent, 0.18));
+    root.setProperty('--accent-hover', lighten(accent, 0.14));
+    root.setProperty('--accent-deep', darken(accent, 0.3));
+    root.setProperty('--accent-ink', lighten(accent, 0.5));
+    root.setProperty('--accent-soft', `rgba(${r}, ${g}, ${b}, 0.12)`);
   }, [accent]);
   useEffect(() => {
     if (project?.name) {
