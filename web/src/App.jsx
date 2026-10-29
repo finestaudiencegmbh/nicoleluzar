@@ -28,6 +28,16 @@ const EMPTY_FILTERS = {
   income: '', realEstate: '', employment: '', from: '', to: '', onlyTickets: false, tiers: [],
 };
 
+/** Voreingestellter Zeitraum: „Dieser Monat" (1. des Monats bis heute),
+ *  damit nur die aktuellen Daten geladen werden und die Ladezeit kurz bleibt. */
+function thisMonthRange() {
+  const p = (n) => String(n).padStart(2, '0');
+  const d = new Date();
+  const from = `${d.getFullYear()}-${p(d.getMonth() + 1)}-01`;
+  const to = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return { from, to };
+}
+
 /** Tages-Spend eines Funnels: Summe der Kampagnen-Tagesreihen (dailyByEntity). */
 function funnelDailySpend(hier, dailyByEntity) {
   const camp = dailyByEntity?.campaign || {};
@@ -43,8 +53,8 @@ export default function App() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [range, setRange] = useState({ from: '', to: '' });
+  const [filters, setFilters] = useState(() => ({ ...EMPTY_FILTERS, ...thisMonthRange() }));
+  const [range, setRange] = useState(thisMonthRange);
   const [tab, setTab] = useState('campaign');
   const [view, setView] = useState('dashboard');
   const [segment, setSegment] = useState('all'); // Gesamt | Live | VSL (Funnel-Segment)
