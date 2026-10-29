@@ -103,7 +103,7 @@ export default function App() {
     ? { ...features, hasQuality: true, hasQualityScore: false, ...funnelFlags }
     : { ...features, ...funnelFlags };
   const ticketLabel = project?.ticketLabel || { singular: 'VIP-Ticket', plural: 'VIP-Tickets' };
-  const accent = project?.branding?.accent || '#d0bb5a';
+  const accent = project?.branding?.accent || '#ec761e';
   const logo = project?.branding?.logo || '/logo.svg';
   const brandTitle = project?.shortName || 'Dashboard';
   const brandSub = project?.subtitle || '';
@@ -259,7 +259,7 @@ export default function App() {
     if (idx >= 0 && idx < DRILL_ORDER.length - 1) setTab(DRILL_ORDER[idx + 1]);
   };
 
-  if (loading && !data) return <LoadingScreen accent={accent} title={brandTitle} logo={logo} />;
+  if (loading && !data) return <LoadingScreen accent={accent} title={brandTitle} />;
 
   return (
     <div className="layout">

@@ -23,10 +23,13 @@ const fmtSec = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
  * der letzten echten Ladedauer gelernt wird – so wird die Erwartung pro
  * Umgebung mit jeder Ladung genauer.
  */
-export default function LoadingScreen({ accent = '#ec761e', title = 'Dashboard', logo = '/logo.svg' }) {
+export default function LoadingScreen({ accent = '#ec761e', title = 'Dashboard', logo = '/loader-logo.png' }) {
   const etaRef = useRef(readEta());
   const startRef = useRef(performance.now());
   const [elapsed, setElapsed] = useState(0);
+  // Der Loader erscheint, bevor die Server-Config geladen ist – daher ein
+  // statischer Pfad mit Fallback auf das Projekt-Logo, falls es ihn nicht gibt.
+  const [logoSrc, setLogoSrc] = useState(logo);
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(performance.now() - startRef.current), 90);
@@ -57,7 +60,7 @@ export default function LoadingScreen({ accent = '#ec761e', title = 'Dashboard',
           <span className="load-ring" />
           <span className="load-ring load-ring-2" />
           <span className="load-pulse" />
-          <img className="load-logo" src={logo} alt="" width="56" height="56" />
+          <img className="load-logo" src={logoSrc} onError={() => setLogoSrc('/logo.svg')} alt="" width="58" height="58" />
         </div>
         <div className="load-title">{title}</div>
         <div className="load-stage">{stage}</div>

@@ -5,10 +5,11 @@
   "shortName": "Nicole Luzar",
   "subtitle": "Live-Webinar",
 
-  "_comment_branding": "accent = Akzentfarbe (Hex) für KPIs, Buttons, Graphen. logo = Pfad zum Logo in web/public (wird als /<datei> ausgeliefert).",
+  "_comment_branding": "accent = Akzentfarbe (Hex) für KPIs, Buttons, Graphen. logo = Pfad zum Logo in web/public (wird als /<datei> ausgeliefert). loaderLogo = optional separates Logo nur für die Ladeanzeige (z. B. Agentur-Logo); fehlt es, wird logo verwendet.",
   "branding": {
     "accent": "#ec761e",
-    "logo": "/logo.svg"
+    "logo": "/logo.svg",
+    "loaderLogo": "/loader-logo.png"
   },
 
   "_comment_features": "Feature-Flags. hasTickets=false blendet ALLE ticketbezogenen KPIs/Spalten aus (€/Ticket, CVR Ticket, Kosten/Ticket, VIP). hasQuality=false blendet das komplette Fragebogen-/Scoring-System aus (Quali-Rate, Ø Quali, Tier-Verteilung, Fragebogen-Filter). Dieses Projekt: weder Tickets noch Fragebogen.",
