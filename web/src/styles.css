@@ -51,6 +51,48 @@ body {
 .app { max-width: 1320px; margin: 0 auto; padding: 0 28px 88px; }
 .loader { display: grid; place-items: center; height: 100vh; color: var(--muted); font-size: 17px; letter-spacing: -0.01em; }
 
+/* ---- Ladeanzeige mit Fortschrittsbalken + animiertem Logo ----------------- */
+.load-screen { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); overflow: hidden; z-index: 500; }
+.load-bg { position: absolute; inset: 0; pointer-events: none; }
+.load-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; }
+.load-orb-1 { width: 520px; height: 520px; left: -8%; top: -12%; background: radial-gradient(circle, rgba(var(--accent-rgb), 0.3), transparent 66%); animation: orbDrift1 16s ease-in-out infinite; }
+.load-orb-2 { width: 460px; height: 460px; right: -10%; bottom: -14%; background: radial-gradient(circle, rgba(var(--accent-rgb), 0.18), transparent 66%); animation: orbDrift2 20s ease-in-out infinite; }
+.load-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(circle at 50% 44%, #000 0%, transparent 62%);
+  -webkit-mask-image: radial-gradient(circle at 50% 44%, #000 0%, transparent 62%);
+  animation: gridFloat 24s linear infinite;
+}
+@keyframes orbDrift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(60px, 40px) scale(1.12); } }
+@keyframes orbDrift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-50px, -36px) scale(1.1); } }
+@keyframes gridFloat { from { background-position: 0 0, 0 0; } to { background-position: 46px 46px, 46px 46px; } }
+
+.load-box { position: relative; width: min(420px, 82vw); display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 8px; }
+.load-logo-wrap { position: relative; width: 108px; height: 108px; display: grid; place-items: center; margin-bottom: 26px; }
+.load-logo { position: relative; z-index: 2; border-radius: 14px; animation: logoBob 3.4s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(var(--accent-rgb), 0.45)); }
+@keyframes logoBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.load-ring { position: absolute; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--accent); border-right-color: rgba(var(--accent-rgb), 0.35); animation: spin 2.6s linear infinite; }
+.load-ring { width: 92px; height: 92px; }
+.load-ring-2 { width: 108px; height: 108px; border-top-color: rgba(var(--accent-rgb), 0.55); border-right-color: transparent; border-left-color: rgba(var(--accent-rgb), 0.22); animation: spinRev 4.2s linear infinite; }
+.load-pulse { position: absolute; width: 88px; height: 88px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--accent-rgb), 0.22), transparent 70%); animation: pulseGlow 2.6s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spinRev { to { transform: rotate(-360deg); } }
+@keyframes pulseGlow { 0%,100% { transform: scale(0.9); opacity: 0.55; } 50% { transform: scale(1.18); opacity: 0.9; } }
+
+.load-title { font-size: 18px; font-weight: 650; letter-spacing: -0.02em; color: var(--ink); }
+.load-stage { margin-top: 7px; font-size: 13.5px; color: var(--muted); letter-spacing: -0.01em; min-height: 18px; }
+.load-track { position: relative; width: 100%; height: 7px; margin-top: 20px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04); }
+.load-fill { height: 100%; border-radius: 999px; box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.6); transition: width .22s ease-out; position: relative; }
+.load-fill::after { content: ''; position: absolute; inset: 0; border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent); transform: translateX(-100%); animation: shimmer 1.5s ease-in-out infinite; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+.load-meta { width: 100%; display: flex; justify-content: space-between; margin-top: 10px; font-size: 12.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .load-orb, .load-grid, .load-logo, .load-ring, .load-pulse, .load-fill::after { animation: none; }
+}
+
 /* ---- Topbar (frosted, sticky) ---- */
 .topbar {
   position: sticky;

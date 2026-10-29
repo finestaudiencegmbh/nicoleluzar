@@ -13,6 +13,7 @@ import QualityView from './components/QualityView.jsx';
 import SegmentSwitcher from './components/SegmentSwitcher.jsx';
 import LeadHeatmap from './components/LeadHeatmap.jsx';
 import ChatBot from './components/ChatBot.jsx';
+import LoadingScreen, { recordLoadDuration } from './components/LoadingScreen.jsx';
 import { fmtEur, fmtInt } from './lib.js';
 
 const NAV = [
@@ -62,8 +63,10 @@ export default function App() {
   const load = async (refresh = false, r = range) => {
     setLoading(true);
     setError(null);
+    const t0 = performance.now();
     try {
       setData(await fetchData({ refresh, from: r.from, to: r.to }));
+      recordLoadDuration(performance.now() - t0); // ETA für die nächste Ladeanzeige lernen
     } catch (e) {
       setError(e.message);
     } finally {
@@ -256,7 +259,7 @@ export default function App() {
     if (idx >= 0 && idx < DRILL_ORDER.length - 1) setTab(DRILL_ORDER[idx + 1]);
   };
 
-  if (loading && !data) return <div className="loader">Lade Daten…</div>;
+  if (loading && !data) return <LoadingScreen accent={accent} title={brandTitle} logo={logo} />;
 
   return (
     <div className="layout">
